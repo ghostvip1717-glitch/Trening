@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Accountability</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --accent: #7c6aff;
+    --accent-glow: rgba(124,106,255,0.2);
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.12);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.12);
+    --yellow: #eab308;
+    --yellow-bg: rgba(234,179,8,0.12);
+    --text: #f0f0f5;
+    --muted: #6b6b80;
+    --display: 'Unbounded', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SCREENS */
+  .screen { display: none; padding: 20px 16px 32px; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ONBOARDING */
+  #screen-onboarding {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0;
+  }
+
+  .ob-logo {
+    font-family: var(--display);
+    font-size: 48px;
+    margin-bottom: 24px;
+    filter: drop-shadow(0 0 24px var(--accent));
+  }
+
+  .ob-title {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  .ob-sub {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+    max-width: 280px;
+  }
+
+  .role-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .role-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+
+  .role-card:active { transform: scale(0.98); }
+  .role-card.student:hover, .role-card.student:active { border-color: var(--accent); background: rgba(124,106,255,0.08); }
+  .role-card.coach:hover, .role-card.coach:active { border-color: var(--green); background: var(--green-bg); }
+
+  .role-icon { font-size: 28px; margin-bottom: 8px; }
+  .role-name { font-family: var(--display); font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .role-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* HEADER */
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .app-logo {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  .role-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-student { background: var(--accent-glow); color: var(--accent); }
+  .badge-coach { background: var(--green-bg); color: var(--green); }
+
+  /* DEBT CARD */
+  .debt-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .debt-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--red));
+  }
+
+  .debt-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .debt-amount {
+    font-family: var(--display);
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .debt-amount.zero { color: var(--green); }
+  .debt-amount.positive { color: var(--red); }
+
+  .debt-currency {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* SECTION */
+  .section-title {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+
+  /* TASK CARD */
+  .task-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .task-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .task-name {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+    margin-right: 10px;
+    line-height: 1.3;
+  }
+
+  .task-fine {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--yellow);
+    white-space: nowrap;
+  }
+
+  .task-deadline {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .task-deadline.overdue { color: var(--red); }
+  .task-deadline.soon { color: var(--yellow); }
+
+  .task-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .status-active { background: var(--accent-glow); color: var(--accent); }
+  .status-pending { background: var(--yellow-bg); color: var(--yellow); }
+  .status-done { background: var(--green-bg); color: var(--green); }
+  .status-failed { background: var(--red-bg); color: var(--red); }
+
+  .task-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  /* BUTTONS */
+  .btn {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    width: 100%;
+    padding: 14px;
+    font-size: 14px;
+    border-radius: 14px;
+  }
+
+  .btn-sm { padding: 8px 14px; font-size: 12px; flex: 1; }
+  .btn-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+  .btn-red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  .btn-ghost { background: var(--surface2); color: var(--text); }
+
+  .btn-add {
+    background: var(--surface);
+    border: 1.5px dashed var(--border);
+    color: var(--muted);
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: flex-end;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    padding: 24px 20px 40px;
+    width: 100%;
+    border-top: 1px solid var(--border);
+  }
+
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  .modal-title {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  /* FORM */
+  .field { margin-bottom: 14px; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { resize: none; height: 80px; }
+
+  /* PAYMENT CARD */
+  .payment-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .payment-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .payment-amount {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--yellow);
+  }
+
+  .payment-note { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .empty-icon { font-size: 32px; margin-bottom: 10px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="screen-onboarding" class="screen active">
+  <div class="ob-logo">🔥</div>
+  <div class="ob-title">Accountability</div>
+  <p class="ob-sub">Система ответственности между учеником и тренером. Выбери свою роль.</p>
+  <div class="role-cards">
+    <div class="role-card student" onclick="chooseRole('student')">
+      <div class="role-icon">🎯</div>
+      <div class="role-name">Я ученик</div>
+      <div class="role-desc">Ставлю задачи себе, отправляю отчёты, плачу штрафы если не выполнил</div>
+    </div>
+    <div class="role-card coach" onclick="chooseRole('coach')">
+      <div class="role-icon">🏆</div>
+      <div class="role-name">Я тренер</div>
+      <div class="role-desc">Проверяю выполнение задач, принимаю или отклоняю отчёты и оплаты</div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT SCREEN -->
+<div id="screen-student" class="screen">
+  <div class="app-header">
+    <div class="app-logo">ACCOUNTABILITY</div>
+    <div class="role-badge badge-student">УЧЕНИК</div>
+  </div>
+
+  <div class="debt-card">
+    <div class="debt-label">Текущий долг</div>
+    <div class="debt-amount" id="student-debt">0</div>
+    <div class="debt-currency">рублей</div>
+  </div>
+
+  <div class="section-title">Активные задачи</div>
+  <div id="student-tasks-list"></div>
+  <button class="btn-add" onclick="openModal('modal-task')">+ Новая задача</button>
+
+  <div class="section-title">Оплата долга</div>
+  <div id="student-payments-list"></div>
+  <button class="btn btn-primary" onclick="openModal('modal-pay')" style="margin-top:8px">💸 Отправить оплату тренеру</button>
+</div>
+
+<!-- COACH SCREEN -->
+<div id="screen-coach" class="screen">
+  <div class="app-header">
+    <div class="app-logo">ACCOUNTABILITY</div>
+    <div class="role-badge badge-coach">ТРЕНЕР</div>
+  </div>
+
+  <div class="debt-card">
+    <div class="debt-label">Долг ученика</div>
+    <div class="debt-amount" id="coach-debt">0</div>
+    <div class="debt-currency">рублей</div>
+  </div>
+
+  <div class="section-title">Отчёты на проверку</div>
+  <div id="coach-reports-list"></div>
+
+  <div class="section-title">Запросы на оплату</div>
+  <div id="coach-payments-list"></div>
+
+  <div class="section-title">Все задачи ученика</div>
+  <div id="coach-tasks-list"></div>
+</div>
+
+<!-- MODAL: NEW TASK -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Новая задача</div>
+    <div class="field">
+      <label>Название задачи</label>
+      <input type="text" id="task-name" placeholder="Например: Выпить витамины">
+    </div>
+    <div class="field">
+      <label>Дедлайн</label>
+      <input type="datetime-local" id="task-deadline">
+    </div>
+    <div class="field">
+      <label>Штраф если не выполню (₽)</label>
+      <input type="number" id="task-fine" placeholder="500" inputmode="numeric">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-task')">Отмена</button>
+      <button class="btn btn-primary" style="flex:2" onclick="createTask()">Создать задачу</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SEND REPORT -->
+<div class="modal-overlay" id="modal-report">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Отправить отчёт</div>
+    <div class="field">
+      <label>Описание / комментарий</label>
+      <textarea id="report-text" placeholder="Что сделал, как выполнил задачу..."></textarea>
+    </div>
+    <input type="hidden" id="report-task-id">
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-report')">Отмена</button>
+      <button class="btn btn-primary" style="flex:2" onclick="submitReport()">Отправить тренеру ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PAY DEBT -->
+<div class="modal-overlay" id="modal-pay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Оплата долга</div>
+    <div class="field">
+      <label>Сумма оплаты (₽)</label>
+      <input type="number" id="pay-amount" placeholder="1000" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>Комментарий (необязательно)</label>
+      <input type="text" id="pay-note" placeholder="Например: перевёл на карту">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-pay')">Отмена</button>
+      <button class="btn btn-primary" style="flex:2" onclick="submitPayment()">Отправить запрос</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// STATE
+let state = {
+  role: null,        // 'student' | 'coach'
+  debt: 0,
+  tasks: [],         // {id, name, deadline, fine, status: 'active'|'reported'|'done'|'failed', reportText, createdAt}
+  payments: [],      // {id, amount, note, status: 'pending'|'confirmed'|'rejected', createdAt}
+};
+
+// STORAGE
+async function saveState() {
+  try {
+    await window.storage.set('accountability-state', JSON.stringify(state), true);
+  } catch(e) { console.error('Save error', e); }
+}
+
+async function loadState() {
+  try {
+    const res = await window.storage.get('accountability-state', true);
+    if (res && res.value) {
+      state = JSON.parse(res.value);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+// INIT
+async function init() {
+  const loaded = await loadState();
+  if (loaded && state.role) {
+    showScreen(state.role === 'student' ? 'student' : 'coach');
+    render();
+  } else {
+    showScreen('onboarding');
+  }
+  checkDeadlines();
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+async function chooseRole(role) {
+  state.role = role;
+  await saveState();
+  showScreen(role === 'student' ? 'student' : 'coach');
+  render();
+  toast(role === 'student' ? '🎯 Ты ученик!' : '🏆 Ты тренер!');
+}
+
+// RENDER
+function render() {
+  updateDebt();
+  if (state.role === 'student') renderStudent();
+  else renderCoach();
+}
+
+function updateDebt() {
+  const el1 = document.getElementById('student-debt');
+  const el2 = document.getElementById('coach-debt');
+  const cls = state.debt === 0 ? 'zero' : 'positive';
+  if (el1) { el1.textContent = state.debt; el1.className = 'debt-amount ' + cls; }
+  if (el2) { el2.textContent = state.debt; el2.className = 'debt-amount ' + cls; }
+}
+
+function renderStudent() {
+  const list = document.getElementById('student-tasks-list');
+  const activeTasks = state.tasks.filter(t => t.status === 'active' || t.status === 'reported');
+
+  if (activeTasks.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Нет активных задач.<br>Создай первую!</div>';
+  } else {
+    list.innerHTML = activeTasks.map(t => taskCardHTML(t, 'student')).join('');
+  }
+
+  const plist = document.getElementById('student-payments-list');
+  const pendingPays = state.payments.filter(p => p.status === 'pending' || p.status === 'confirmed' || p.status === 'rejected');
+  if (pendingPays.length === 0) {
+    plist.innerHTML = '<div class="empty"><div class="empty-icon">💰</div>Нет запросов на оплату</div>';
+  } else {
+    plist.innerHTML = pendingPays.slice(-5).reverse().map(p => paymentCardHTML(p, 'student')).join('');
+  }
+}
+
+function renderCoach() {
+  // Reports to review
+  const reports = state.tasks.filter(t => t.status === 'reported');
+  const rlist = document.getElementById('coach-reports-list');
+  if (reports.length === 0) {
+    rlist.innerHTML = '<div class="empty"><div class="empty-icon">✅</div>Нет отчётов на проверку</div>';
+  } else {
+    rlist.innerHTML = reports.map(t => reportCardHTML(t)).join('');
+  }
+
+  // Payments to confirm
+  const pends = state.payments.filter(p => p.status === 'pending');
+  const plist = document.getElementById('coach-payments-list');
+  if (pends.length === 0) {
+    plist.innerHTML = '<div class="empty"><div class="empty-icon">💸</div>Нет запросов на оплату</div>';
+  } else {
+    plist.innerHTML = pends.map(p => paymentCardHTML(p, 'coach')).join('');
+  }
+
+  // All tasks
+  const tlist = document.getElementById('coach-tasks-list');
+  if (state.tasks.length === 0) {
+    tlist.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Ученик ещё не создал задач</div>';
+  } else {
+    tlist.innerHTML = state.tasks.slice().reverse().map(t => taskCardHTML(t, 'coach')).join('');
+  }
+}
+
+function taskCardHTML(t, role) {
+  const now = new Date();
+  const dl = new Date(t.deadline);
+  const overdue = dl < now && t.status === 'active';
+  const soon = dl - now < 3600000 && dl > now && t.status === 'active';
+  const dlStr = dl.toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+
+  const statusMap = {
+    active: '<span class="task-status status-active">● Активна</span>',
+    reported: '<span class="task-status status-pending">⏳ На проверке</span>',
+    done: '<span class="task-status status-done">✓ Выполнено</span>',
+    failed: '<span class="task-status status-failed">✗ Провалено</span>',
+  };
+
+  let actions = '';
+  if (role === 'student' && t.status === 'active') {
+    actions = `<div class="task-actions"><button class="btn btn-green btn-sm" onclick="openReport('${t.id}')">📸 Отправить отчёт</button></div>`;
+  }
+
+  return `
+    <div class="task-card">
+      <div class="task-top">
+        <div class="task-name">${t.name}</div>
+        <div class="task-fine">−${t.fine}₽</div>
+      </div>
+      <div class="task-deadline ${overdue?'overdue':soon?'soon':''}">⏰ ${dlStr}${overdue?' — просрочено':''}</div>
+      ${t.reportText && t.status === 'reported' ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;padding:8px;background:var(--surface2);border-radius:8px">"${t.reportText}"</div>` : ''}
+      ${statusMap[t.status] || ''}
+      ${actions}
+    </div>`;
+}
+
+function reportCardHTML(t) {
+  return `
+    <div class="task-card">
+      <div class="task-top">
+        <div class="task-name">${t.name}</div>
+        <div class="task-fine">−${t.fine}₽</div>
+      </div>
+      ${t.reportText ? `<div style="font-size:12px;color:var(--muted);margin-bottom:10px;padding:8px;background:var(--surface2);border-radius:8px">"${t.reportText}"</div>` : ''}
+      <div class="task-actions">
+        <button class="btn btn-green btn-sm" onclick="reviewTask('${t.id}', true)">✓ Принять</button>
+        <button class="btn btn-red btn-sm" onclick="reviewTask('${t.id}', false)">✗ Отклонить</button>
+      </div>
+    </div>`;
+}
+
+function paymentCardHTML(p, role) {
+  const statusMap = {
+    pending: '<span class="task-status status-pending">⏳ Ожидает подтверждения</span>',
+    confirmed: '<span class="task-status status-done">✓ Подтверждено</span>',
+    rejected: '<span class="task-status status-failed">✗ Отклонено</span>',
+  };
+
+  let actions = '';
+  if (role === 'coach' && p.status === 'pending') {
+    actions = `<div class="task-actions">
+      <button class="btn btn-green btn-sm" onclick="reviewPayment('${p.id}', true)">✓ Подтвердить</button>
+      <button class="btn btn-red btn-sm" onclick="reviewPayment('${p.id}', false)">✗ Отклонить</button>
+    </div>`;
+  }
+
+  return `
+    <div class="payment-card">
+      <div class="payment-top">
+        <div class="payment-amount">${p.amount}₽</div>
+        ${statusMap[p.status] || ''}
+      </div>
+      ${p.note ? `<div class="payment-note">${p.note}</div>` : ''}
+      ${actions}
+    </div>`;
+}
+
+// ACTIONS
+function openReport(taskId) {
+  document.getElementById('report-task-id').value = taskId;
+  document.getElementById('report-text').value = '';
+  openModal('modal-report');
+}
+
+async function createTask() {
+  const name = document.getElementById('task-name').value.trim();
+  const deadline = document.getElementById('task-deadline').value;
+  const fine = parseInt(document.getElementById('task-fine').value);
+
+  if (!name || !deadline || !fine || fine <= 0) { toast('⚠️ Заполни все поля'); return; }
+
+  state.tasks.push({
+    id: Date.now().toString(),
+    name, deadline, fine,
+    status: 'active',
+    reportText: '',
+    createdAt: new Date().toISOString()
+  });
+
+  await saveState();
+  closeModal('modal-task');
+  render();
+  toast('✅ Задача создана!');
+
+  document.getElementById('task-name').value = '';
+  document.getElementById('task-deadline').value = '';
+  document.getElementById('task-fine').value = '';
+}
+
+async function submitReport() {
+  const taskId = document.getElementById('report-task-id').value;
+  const text = document.getElementById('report-text').value.trim();
+  if (!text) { toast('⚠️ Напиши комментарий'); return; }
+
+  const task = state.tasks.find(t => t.id === taskId);
+  if (task) {
+    task.status = 'reported';
+    task.reportText = text;
+  }
+
+  await saveState();
+  closeModal('modal-report');
+  render();
+  toast('📨 Отчёт отправлен тренеру!');
+}
+
+async function submitPayment() {
+  const amount = parseInt(document.getElementById('pay-amount').value);
+  const note = document.getElementById('pay-note').value.trim();
+  if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
+
+  state.payments.push({
+    id: Date.now().toString(),
+    amount, note,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  });
+
+  await saveState();
+  closeModal('modal-pay');
+  render();
+  toast('💸 Запрос отправлен тренеру!');
+
+  document.getElementById('pay-amount').value = '';
+  document.getElementById('pay-note').value = '';
+}
+
+async function reviewTask(taskId, accepted) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  if (accepted) {
+    task.status = 'done';
+    toast('✅ Отчёт принят!');
+  } else {
+    task.status = 'failed';
+    state.debt += task.fine;
+    toast(`❌ Отклонено. Долг +${task.fine}₽`);
+  }
+
+  await saveState();
+  render();
+}
+
+async function reviewPayment(payId, accepted) {
+  const pay = state.payments.find(p => p.id === payId);
+  if (!pay) return;
+
+  if (accepted) {
+    pay.status = 'confirmed';
+    state.debt = Math.max(0, state.debt - pay.amount);
+    toast(`✅ Оплата ${pay.amount}₽ подтверждена`);
+  } else {
+    pay.status = 'rejected';
+    toast('❌ Оплата отклонена');
+  }
+
+  await saveState();
+  render();
+}
+
+function checkDeadlines() {
+  const now = new Date();
+  let changed = false;
+  state.tasks.forEach(t => {
+    if (t.status === 'active' && new Date(t.deadline) < now) {
+      t.status = 'failed';
+      state.debt += t.fine;
+      changed = true;
+    }
+  });
+  if (changed) { saveState(); render(); }
+  setTimeout(checkDeadlines, 60000);
+}
+
+// MODAL
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => {
+    if (e.target === el) el.classList.remove('open');
+  });
+});
+
+// TOAST
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>
