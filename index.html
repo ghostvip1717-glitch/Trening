@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Accountability</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c26;
+  --border: #252535;
+  --accent: #6c5ce7;
+  --green: #00d68f;
+  --red: #ff4757;
+  --yellow: #ffd32a;
+  --text: #eeeef5;
+  --muted: #55556a;
+  --display: 'Unbounded', sans-serif;
+  --body: 'Inter', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; flex-direction: column; height: 100vh; }
+.screen.active { display: flex; }
+
+/* ── ONBOARDING ── */
+#s-onboard {
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+  gap: 0;
+}
+
+.ob-flame { font-size: 56px; margin-bottom: 20px; filter: drop-shadow(0 0 20px #6c5ce7); }
+.ob-title { font-family: var(--display); font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.ob-sub { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 36px; }
+
+.ob-waiting {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 20px;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: none;
+}
+
+.role-btn {
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: left;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.role-btn:active { transform: scale(0.97); }
+.role-btn.student:active, .role-btn.student:focus { border-color: var(--accent); }
+.role-btn.coach:active, .role-btn.coach:focus { border-color: var(--green); }
+
+.role-icon { font-size: 26px; flex-shrink: 0; }
+.role-text-name { font-family: var(--display); font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.role-text-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+/* ── PIN SCREEN ── */
+#s-pin {
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  gap: 0;
+}
+
+.pin-title { font-family: var(--display); font-size: 16px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+.pin-sub { font-size: 12px; color: var(--muted); margin-bottom: 32px; text-align: center; }
+
+.pin-dots {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.pin-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.15s;
+}
+
+.pin-dot.filled { background: var(--accent); transform: scale(1.1); }
+
+.pin-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.pin-key {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.1s;
+  user-select: none;
+}
+
+.pin-key:active { background: var(--surface2); transform: scale(0.94); border-color: var(--accent); }
+.pin-key.del { font-size: 14px; color: var(--muted); }
+.pin-key.empty { background: transparent; border-color: transparent; pointer-events: none; }
+
+.pin-error { color: var(--red); font-size: 12px; margin-top: -20px; margin-bottom: 16px; height: 16px; text-align: center; }
+
+/* ── APP SHELL ── */
+#s-app {
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-top {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.app-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.app-wordmark { font-family: var(--display); font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; }
+
+.role-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pill-student { background: var(--accent); color: #fff; }
+.pill-coach { background: var(--green); color: #000; }
+
+/* DEBT DISPLAY */
+.debt-display { text-align: center; padding: 4px 0 8px; }
+.debt-label { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+.debt-number {
+  font-family: var(--display);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  transition: color 0.3s;
+}
+.debt-number.zero { color: var(--green); }
+.debt-number.pos { color: var(--red); }
+.debt-rub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* TABS */
+.tab-content { flex: 1; overflow-y: auto; padding: 16px 16px 80px; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-family: var(--body);
+  transition: color 0.15s;
+}
+
+.nav-btn.active { color: var(--accent); }
+.nav-btn.active .nav-icon { transform: scale(1.1); }
+.nav-icon { font-size: 20px; transition: transform 0.15s; }
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.card-name { font-size: 14px; font-weight: 600; flex: 1; margin-right: 10px; line-height: 1.3; }
+.card-fine { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
+.card-deadline { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.card-deadline.overdue { color: var(--red); }
+.card-deadline.soon { color: var(--yellow); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+.badge-active { background: rgba(108,92,231,0.15); color: var(--accent); }
+.badge-pending { background: rgba(255,211,42,0.12); color: var(--yellow); }
+.badge-done { background: rgba(0,214,143,0.12); color: var(--green); }
+.badge-failed { background: rgba(255,71,87,0.12); color: var(--red); }
+
+.card-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+.btn { border: none; border-radius: 12px; padding: 10px 14px; font-family: var(--body); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.12s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--accent); color: #fff; width: 100%; padding: 15px; font-size: 14px; border-radius: 14px; }
+.btn-green { background: rgba(0,214,143,0.12); color: var(--green); border: 1px solid rgba(0,214,143,0.3); flex: 1; }
+.btn-red { background: rgba(255,71,87,0.12); color: var(--red); border: 1px solid rgba(255,71,87,0.3); flex: 1; }
+.btn-ghost { background: var(--surface2); color: var(--text); flex: 1; }
+
+.btn-fab {
+  position: fixed;
+  bottom: 72px;
+  right: 20px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(108,92,231,0.4);
+  z-index: 40;
+  transition: transform 0.15s;
+}
+.btn-fab:active { transform: scale(0.92); }
+
+/* HISTORY ITEM */
+.hist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-left { flex: 1; }
+.hist-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+.hist-date { font-size: 11px; color: var(--muted); }
+.hist-amount { font-family: var(--display); font-size: 14px; font-weight: 700; }
+.hist-amount.fine { color: var(--red); }
+.hist-amount.paid { color: var(--green); }
+
+.section-title {
+  font-family: var(--display);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  margin-top: 4px;
+}
+
+.empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: flex-end; backdrop-filter: blur(6px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 24px 24px 0 0; padding: 20px 20px 40px; width: 100%; border-top: 1px solid var(--border); }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
+.modal-title { font-family: var(--display); font-size: 15px; font-weight: 700; margin-bottom: 18px; }
+
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px; }
+.field input, .field textarea {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; color: var(--text);
+  font-family: var(--body); font-size: 14px; outline: none; transition: border-color 0.15s; -webkit-appearance: none;
+}
+.field input:focus, .field textarea:focus { border-color: var(--accent); }
+.field textarea { resize: none; height: 72px; }
+.modal-btns { display: flex; gap: 10px; margin-top: 14px; }
+
+/* REPORT TEXT */
+.report-box {
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 20px;
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transition: all 0.25s; z-index: 300;
+  white-space: nowrap; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ════ ONBOARDING ════ -->
+<div id="s-onboard" class="screen active">
+  <div class="ob-flame">🔥</div>
+  <div class="ob-title">Accountability</div>
+  <p class="ob-sub">Система ответственности.<br>Выбери роль для первого входа.</p>
+  <button class="role-btn student" onclick="startRegister('student')">
+    <div class="role-icon">🎯</div>
+    <div>
+      <div class="role-text-name">Я ученик</div>
+      <div class="role-text-desc">Ставлю задачи, отправляю отчёты, плачу штрафы</div>
+    </div>
+  </button>
+  <button class="role-btn coach" onclick="startRegister('coach')">
+    <div class="role-icon">🏆</div>
+    <div>
+      <div class="role-text-name">Я тренер</div>
+      <div class="role-text-desc">Проверяю отчёты, подтверждаю оплаты</div>
+    </div>
+  </button>
+  <div class="ob-waiting" id="ob-waiting"></div>
+</div>
+
+<!-- ════ PIN SCREEN ════ -->
+<div id="s-pin" class="screen">
+  <div class="pin-title" id="pin-title">Придумай PIN-код</div>
+  <div class="pin-sub" id="pin-sub">4 цифры — твой ключ входа</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-pad">
+    <div class="pin-key" onclick="pinInput('1')">1</div>
+    <div class="pin-key" onclick="pinInput('2')">2</div>
+    <div class="pin-key" onclick="pinInput('3')">3</div>
+    <div class="pin-key" onclick="pinInput('4')">4</div>
+    <div class="pin-key" onclick="pinInput('5')">5</div>
+    <div class="pin-key" onclick="pinInput('6')">6</div>
+    <div class="pin-key" onclick="pinInput('7')">7</div>
+    <div class="pin-key" onclick="pinInput('8')">8</div>
+    <div class="pin-key" onclick="pinInput('9')">9</div>
+    <div class="pin-key empty"></div>
+    <div class="pin-key" onclick="pinInput('0')">0</div>
+    <div class="pin-key del" onclick="pinDel()">⌫</div>
+  </div>
+</div>
+
+<!-- ════ APP ════ -->
+<div id="s-app" class="screen">
+  <div class="app-top">
+    <div class="app-top-row">
+      <div class="app-wordmark">ACCOUNTABILITY</div>
+      <div class="role-pill" id="role-pill"></div>
+    </div>
+    <div class="debt-display">
+      <div class="debt-label" id="debt-label">Текущий долг</div>
+      <div class="debt-number zero" id="debt-number">0</div>
+      <div class="debt-rub">рублей</div>
+    </div>
+  </div>
+
+  <div class="tab-content">
+    <!-- STUDENT TABS -->
+    <div class="tab-pane active" id="tab-tasks">
+      <div class="section-title">Активные задачи</div>
+      <div id="list-tasks"></div>
+    </div>
+    <div class="tab-pane" id="tab-history">
+      <div class="section-title">История</div>
+      <div class="card" id="hist-card"><div id="list-history"></div></div>
+    </div>
+    <!-- COACH TABS -->
+    <div class="tab-pane" id="tab-inbox">
+      <div class="section-title">Отчёты на проверку</div>
+      <div id="list-reports"></div>
+      <div class="section-title" style="margin-top:20px">Запросы на оплату</div>
+      <div id="list-pay-requests"></div>
+    </div>
+    <div class="tab-pane" id="tab-all-tasks">
+      <div class="section-title">Все задачи ученика</div>
+      <div id="list-all-tasks"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV STUDENT -->
+  <nav class="bottom-nav" id="nav-student">
+    <button class="nav-btn active" onclick="switchTab('tasks','nav-student')" id="ntask">
+      <span class="nav-icon">📋</span>Задачи
+    </button>
+    <button class="nav-btn" onclick="switchTab('history','nav-student')" id="nhist">
+      <span class="nav-icon">📜</span>История
+    </button>
+  </nav>
+
+  <!-- BOTTOM NAV COACH -->
+  <nav class="bottom-nav" id="nav-coach" style="display:none">
+    <button class="nav-btn active" onclick="switchTab('inbox','nav-coach')" id="ninbox">
+      <span class="nav-icon">📨</span>Входящие
+    </button>
+    <button class="nav-btn" onclick="switchTab('all-tasks','nav-coach')" id="nalltasks">
+      <span class="nav-icon">📋</span>Задачи
+    </button>
+  </nav>
+
+  <!-- FAB (student only) -->
+  <button class="btn-fab" id="fab" onclick="openModal('m-task')">＋</button>
+</div>
+
+<!-- ════ MODALS ════ -->
+<div class="modal-overlay" id="m-task">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Новая задача</div>
+    <div class="field"><label>Задача</label><input type="text" id="t-name" placeholder="Выпить витамины"></div>
+    <div class="field"><label>Дедлайн</label><input type="datetime-local" id="t-dl"></div>
+    <div class="field"><label>Штраф (₽)</label><input type="number" id="t-fine" placeholder="500" inputmode="numeric"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('m-task')">Отмена</button>
+      <button class="btn btn-primary" style="flex:2" onclick="createTask()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-report">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Отчёт тренеру</div>
+    <div class="field"><label>Комментарий</label><textarea id="r-text" placeholder="Что сделал..."></textarea></div>
+    <input type="hidden" id="r-tid">
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('m-report')">Отмена</button>
+      <button class="btn btn-primary" style="flex:2" onclick="submitReport()">Отправить ✓</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-pay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Оплата долга</div>
+    <div class="field"><label>Сумма (₽)</label><input type="number" id="p-amount" placeholder="1000" inputmode="numeric"></div>
+    <div class="field"><label>Комментарий</label><input type="text" id="p-note" placeholder="Перевёл на карту"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('m-pay')">Отмена</button>
+      <button class="btn btn-primary" style="flex:2" onclick="submitPayment()">Отправить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// ── STATE ──
+let S = {
+  pins: {},        // {student: '1234', coach: '5678'}
+  roles: [],       // ['student'] or ['student','coach'] — registered roles
+  role: null,      // current session role
+  debt: 0,
+  tasks: [],
+  payments: [],
+  history: [],     // {type:'fine'|'paid', name, amount, date}
+};
+
+// ── STORAGE (JSONBin) ──
+const BIN_ID = '6a41865ef5f4af5e293e8842';
+const API_KEY = '$2a$10$O.QnY26A0QLeud4xNtUmeOw5MS9nB1D6C1dmvPSl85WUEnwZKyE1i';
+const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
+
+async function save() {
+  try {
+    await fetch(BIN_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+      body: JSON.stringify(S)
+    });
+  } catch(e) { console.error('Save error', e); }
+}
+
+async function load() {
+  try {
+    const r = await fetch(BIN_URL + '/latest', {
+      headers: { 'X-Master-Key': API_KEY }
+    });
+    const data = await r.json();
+    if (data && data.record) { S = data.record; return true; }
+  } catch(e) { console.error('Load error', e); }
+  return false;
+}
+
+// ── PIN FLOW ──
+let pinMode = ''; // 'register-student' | 'register-coach' | 'login'
+let pinBuf = '';
+let pinConfirm = '';
+let pinStep = 1; // 1=enter, 2=confirm
+
+function startRegister(role) {
+  pinMode = 'register-' + role;
+  pinStep = 1; pinBuf = ''; pinConfirm = '';
+  document.getElementById('pin-title').textContent = role === 'student' ? '🎯 Придумай PIN' : '🏆 Придумай PIN';
+  document.getElementById('pin-sub').textContent = '4 цифры — твой ключ входа';
+  document.getElementById('pin-error').textContent = '';
+  updateDots();
+  showScreen('pin');
+}
+
+function showLoginPin() {
+  pinMode = 'login';
+  pinStep = 1; pinBuf = ''; pinConfirm = '';
+  document.getElementById('pin-title').textContent = 'Добро пожаловать 👋';
+  document.getElementById('pin-sub').textContent = 'Введи свой PIN-код';
+  document.getElementById('pin-error').textContent = '';
+  updateDots();
+  showScreen('pin');
+}
+
+function pinInput(d) {
+  if (pinBuf.length >= 4) return;
+  pinBuf += d;
+  updateDots();
+  if (pinBuf.length === 4) setTimeout(handlePin, 150);
+}
+
+function pinDel() {
+  pinBuf = pinBuf.slice(0, -1);
+  updateDots();
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('d' + i).className = 'pin-dot' + (i < pinBuf.length ? ' filled' : '');
+  }
+}
+
+async function handlePin() {
+  if (pinMode === 'login') {
+    // Find role by PIN
+    let found = null;
+    for (const [role, pin] of Object.entries(S.pins)) {
+      if (pin === pinBuf) { found = role; break; }
+    }
+    if (found) {
+      S.role = found;
+      await save();
+      launchApp();
+    } else {
+      document.getElementById('pin-error').textContent = 'Неверный PIN, попробуй снова';
+      pinBuf = ''; updateDots();
+    }
+    return;
+  }
+
+  // Register flow
+  const role = pinMode.replace('register-', '');
+  if (pinStep === 1) {
+    pinConfirm = pinBuf; pinBuf = '';
+    pinStep = 2;
+    document.getElementById('pin-sub').textContent = 'Повтори PIN для подтверждения';
+    updateDots();
+  } else {
+    if (pinBuf === pinConfirm) {
+      S.pins[role] = pinBuf;
+      if (!S.roles.includes(role)) S.roles.push(role);
+      S.role = role;
+      await save();
+      launchApp();
+    } else {
+      document.getElementById('pin-error').textContent = 'PIN не совпадает, начни заново';
+      pinBuf = ''; pinStep = 1;
+      document.getElementById('pin-sub').textContent = '4 цифры — твой ключ входа';
+      updateDots();
+    }
+  }
+}
+
+// ── INIT ──
+async function init() {
+  const ok = await load();
+  checkDeadlines();
+
+  if (!ok || S.roles.length === 0) {
+    showOnboard();
+    return;
+  }
+
+  // Both registered → show login
+  if (S.roles.length >= 2) {
+    showLoginPin();
+    return;
+  }
+
+  // Only one role registered → either login that role or register second
+  showOnboard();
+}
+
+function showOnboard() {
+  const waiting = document.getElementById('ob-waiting');
+  if (S.roles.includes('student') && !S.roles.includes('coach')) {
+    // Hide student btn, show coach only
+    document.querySelector('.role-btn.student').style.display = 'none';
+    waiting.style.display = 'block';
+    waiting.textContent = '✅ Ученик зарегистрирован. Теперь тренер должен войти.';
+  } else if (S.roles.includes('coach') && !S.roles.includes('student')) {
+    document.querySelector('.role-btn.coach').style.display = 'none';
+    waiting.style.display = 'block';
+    waiting.textContent = '✅ Тренер зарегистрирован. Теперь ученик должен войти.';
+  }
+  showScreen('onboard');
+}
+
+function launchApp() {
+  const r = S.role;
+  // Role pill
+  document.getElementById('role-pill').textContent = r === 'student' ? 'УЧЕНИК' : 'ТРЕНЕР';
+  document.getElementById('role-pill').className = 'role-pill ' + (r === 'student' ? 'pill-student' : 'pill-coach');
+  document.getElementById('debt-label').textContent = r === 'student' ? 'Мой долг' : 'Долг ученика';
+
+  // Nav
+  document.getElementById('nav-student').style.display = r === 'student' ? 'flex' : 'none';
+  document.getElementById('nav-coach').style.display = r === 'coach' ? 'flex' : 'none';
+  document.getElementById('fab').style.display = r === 'student' ? 'flex' : 'none';
+
+  // Default tab
+  if (r === 'student') switchTab('tasks', 'nav-student');
+  else switchTab('inbox', 'nav-coach');
+
+  showScreen('app');
+  render();
+}
+
+// ── TABS ──
+function switchTab(name, navId) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('#' + navId + ' .nav-btn').forEach(b => b.classList.remove('active'));
+  event?.currentTarget?.classList.add('active');
+  // Manual active for programmatic calls
+  const navEl = document.getElementById('nav' + name.replace('-',''));
+  if (navEl) navEl.classList.add('active');
+}
+
+// ── RENDER ──
+function render() {
+  updateDebt();
+  renderTasks();
+  renderHistory();
+  renderInbox();
+  renderAllTasks();
+}
+
+function updateDebt() {
+  const el = document.getElementById('debt-number');
+  el.textContent = S.debt;
+  el.className = 'debt-number ' + (S.debt === 0 ? 'zero' : 'pos');
+}
+
+function renderTasks() {
+  const el = document.getElementById('list-tasks');
+  const active = S.tasks.filter(t => t.status === 'active' || t.status === 'reported');
+  if (!active.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Нет активных задач.<br>Нажми + чтобы создать.</div>';
+    return;
+  }
+  el.innerHTML = active.map(taskCard).join('');
+}
+
+function renderHistory() {
+  const el = document.getElementById('list-history');
+  if (!S.history.length) {
+    el.innerHTML = '<div class="empty" style="padding:20px 0"><div class="empty-icon">📜</div>История пуста</div>';
+    return;
+  }
+  el.innerHTML = S.history.slice().reverse().map(h => `
+    <div class="hist-item">
+      <div class="hist-left">
+        <div class="hist-name">${h.name}</div>
+        <div class="hist-date">${new Date(h.date).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div class="hist-amount ${h.type === 'fine' ? 'fine' : 'paid'}">${h.type === 'fine' ? '−' : '+'}${h.amount}₽</div>
+    </div>`).join('');
+}
+
+function renderInbox() {
+  const reports = S.tasks.filter(t => t.status === 'reported');
+  const rEl = document.getElementById('list-reports');
+  rEl.innerHTML = reports.length ? reports.map(reportCard).join('') :
+    '<div class="empty"><div class="empty-icon">✅</div>Нет отчётов на проверку</div>';
+
+  const pends = S.payments.filter(p => p.status === 'pending');
+  const pEl = document.getElementById('list-pay-requests');
+  pEl.innerHTML = pends.length ? pends.map(payCard).join('') :
+    '<div class="empty"><div class="empty-icon">💸</div>Нет запросов на оплату</div>';
+}
+
+function renderAllTasks() {
+  const el = document.getElementById('list-all-tasks');
+  if (!S.tasks.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Ученик ещё не создал задач</div>';
+    return;
+  }
+  el.innerHTML = S.tasks.slice().reverse().map(t => taskCard(t, true)).join('');
+}
+
+function taskCard(t, coachView = false) {
+  const dl = new Date(t.deadline);
+  const now = new Date();
+  const over = dl < now && t.status === 'active';
+  const soon = dl - now < 3600000 && dl > now;
+  const dlStr = dl.toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  const badges = { active:'<span class="badge badge-active">● Активна</span>', reported:'<span class="badge badge-pending">⏳ На проверке</span>', done:'<span class="badge badge-done">✓ Выполнено</span>', failed:'<span class="badge badge-failed">✗ Провалено</span>' };
+  const actions = (!coachView && t.status === 'active') ?
+    `<div class="card-actions"><button class="btn btn-green" onclick="openReport('${t.id}')">📸 Отправить отчёт</button></div>` : '';
+  const rBox = t.reportText && t.status === 'reported' ?
+    `<div class="report-box">"${t.reportText}"</div>` : '';
+  return `<div class="card">
+    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">−${t.fine}₽</div></div>
+    <div class="card-deadline ${over?'overdue':soon?'soon':''}">⏰ ${dlStr}${over?' · просрочено':''}</div>
+    ${rBox}${badges[t.status]||''}${actions}
+  </div>`;
+}
+
+function reportCard(t) {
+  return `<div class="card">
+    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">−${t.fine}₽</div></div>
+    ${t.reportText ? `<div class="report-box">"${t.reportText}"</div>` : ''}
+    <div class="card-actions">
+      <button class="btn btn-green" onclick="reviewTask('${t.id}',true)">✓ Принять</button>
+      <button class="btn btn-red" onclick="reviewTask('${t.id}',false)">✗ Отклонить</button>
+    </div>
+  </div>`;
+}
+
+function payCard(p) {
+  return `<div class="card">
+    <div class="card-top">
+      <div class="card-name" style="font-family:var(--display);font-size:18px;color:var(--yellow)">${p.amount}₽</div>
+      <span class="badge badge-pending">⏳ Ожидает</span>
+    </div>
+    ${p.note ? `<div style="font-size:12px;color:var(--muted);margin-bottom:10px">${p.note}</div>` : ''}
+    <div class="card-actions">
+      <button class="btn btn-green" onclick="reviewPayment('${p.id}',true)">✓ Подтвердить</button>
+      <button class="btn btn-red" onclick="reviewPayment('${p.id}',false)">✗ Отклонить</button>
+    </div>
+  </div>`;
+}
+
+// ── ACTIONS ──
+async function createTask() {
+  const name = document.getElementById('t-name').value.trim();
+  const dl = document.getElementById('t-dl').value;
+  const fine = parseInt(document.getElementById('t-fine').value);
+  if (!name || !dl || !fine || fine <= 0) { toast('⚠️ Заполни все поля'); return; }
+  S.tasks.push({ id: Date.now().toString(), name, deadline: dl, fine, status: 'active', reportText: '', createdAt: new Date().toISOString() });
+  await save(); closeModal('m-task'); render(); toast('✅ Задача создана!');
+  document.getElementById('t-name').value = ''; document.getElementById('t-fine').value = '';
+}
+
+function openReport(id) {
+  document.getElementById('r-tid').value = id;
+  document.getElementById('r-text').value = '';
+  openModal('m-report');
+}
+
+async function submitReport() {
+  const id = document.getElementById('r-tid').value;
+  const text = document.getElementById('r-text').value.trim();
+  if (!text) { toast('⚠️ Напиши комментарий'); return; }
+  const t = S.tasks.find(t => t.id === id);
+  if (t) { t.status = 'reported'; t.reportText = text; }
+  await save(); closeModal('m-report'); render(); toast('📨 Отчёт отправлен!');
+}
+
+async function submitPayment() {
+  const amount = parseInt(document.getElementById('p-amount').value);
+  const note = document.getElementById('p-note').value.trim();
+  if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
+  S.payments.push({ id: Date.now().toString(), amount, note, status: 'pending', createdAt: new Date().toISOString() });
+  await save(); closeModal('m-pay'); render(); toast('💸 Запрос отправлен!');
+  document.getElementById('p-amount').value = ''; document.getElementById('p-note').value = '';
+}
+
+async function reviewTask(id, ok) {
+  const t = S.tasks.find(t => t.id === id);
+  if (!t) return;
+  if (ok) {
+    t.status = 'done';
+    toast('✅ Отчёт принят!');
+  } else {
+    t.status = 'failed';
+    S.debt += t.fine;
+    S.history.push({ type: 'fine', name: t.name, amount: t.fine, date: new Date().toISOString() });
+    toast(`❌ Отклонено. Долг +${t.fine}₽`);
+  }
+  await save(); render();
+}
+
+async function reviewPayment(id, ok) {
+  const p = S.payments.find(p => p.id === id);
+  if (!p) return;
+  if (ok) {
+    p.status = 'confirmed';
+    S.debt = Math.max(0, S.debt - p.amount);
+    S.history.push({ type: 'paid', name: `Оплата долга`, amount: p.amount, date: new Date().toISOString() });
+    toast(`✅ Оплата ${p.amount}₽ подтверждена`);
+  } else {
+    p.status = 'rejected';
+    toast('❌ Оплата отклонена');
+  }
+  await save(); render();
+}
+
+function checkDeadlines() {
+  const now = new Date(); let changed = false;
+  S.tasks.forEach(t => {
+    if (t.status === 'active' && new Date(t.deadline) < now) {
+      t.status = 'failed'; S.debt += t.fine;
+      S.history.push({ type: 'fine', name: t.name, amount: t.fine, date: new Date().toISOString() });
+      changed = true;
+    }
+  });
+  if (changed) { save(); render(); }
+  setTimeout(checkDeadlines, 60000);
+}
+
+// Pay button on student debt card tap
+document.getElementById('debt-number').addEventListener('click', () => {
+  if (S.role === 'student' && S.debt > 0) openModal('m-pay');
+});
+
+// ── UTILS ──
+function showScreen(name) {
+  const map = { onboard:'s-onboard', pin:'s-pin', app:'s-app' };
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(map[name]).classList.add('active');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); }));
+
+function toast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>
