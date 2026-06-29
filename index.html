@@ -777,12 +777,14 @@ function coachOverdueCard(t) {
 // COACH ALL TASKS
 function renderAll() {
   const el = document.getElementById('tab-all');
-  let html = '<div class="section-title">Все задачи</div>';
-  if (!S.tasks.length) {
-    html += '<div class="empty"><div class="empty-icon">📋</div>Ученик ещё не создал задач</div>';
+  let html = '';
+
+  // History always shown
+  html += '<div class="section-title">История</div>';
+  if (!S.history.length) {
+    html += '<div class="empty" style="padding:20px"><div class="empty-icon">📜</div>История пуста</div>';
   } else {
-    // History for coach
-    html += '<div class="section-title" style="margin-top:16px">История</div><div class="card">';
+    html += '<div class="card">';
     const finished = S.history;
     if (!finished.length) {
       html += '<div style="padding:12px 0;color:var(--muted);font-size:13px;text-align:center">Пусто</div>';
@@ -799,10 +801,13 @@ function renderAll() {
           <div class="hist-amount ${amtClass}">${amtStr}</div>
         </div>`;
       }).join('');
-    }
     html += '</div>';
+  }
 
-    html += '<div class="section-title" style="margin-top:16px">Задачи</div>';
+  html += '<div class="section-title" style="margin-top:16px">Задачи</div>';
+  if (!S.tasks.length) {
+    html += '<div class="empty"><div class="empty-icon">📋</div>Ученик ещё не создал задач</div>';
+  } else {
     const badgesAll = {
       pending: '<span class="badge badge-wait">⏳ Ждёт подтверждения</span>',
       active: '<span class="badge badge-active">● Активна</span>',
@@ -819,6 +824,9 @@ function renderAll() {
         ${badgesAll[t.status]||''}
       </div>`).join('');
   }
+
+  html += renderMiniCalendar();
+  html += renderTimerCard('coach');
   el.innerHTML = html;
 }
 
