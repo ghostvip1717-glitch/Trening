@@ -831,28 +831,23 @@ function renderAll() {
   const el = document.getElementById('tab-all');
   let html = '';
 
-  // History always shown
   html += '<div class="section-title">История</div>';
   if (!S.history.length) {
     html += '<div class="empty" style="padding:20px"><div class="empty-icon">📜</div>История пуста</div>';
   } else {
     html += '<div class="card">';
-    const finished = S.history;
-    if (!finished.length) {
-      html += '<div style="padding:12px 0;color:var(--muted);font-size:13px;text-align:center">Пусто</div>';
-    } else {
-      html += finished.slice().reverse().map(h => {
-        let amtClass = 'hist-fine', amtStr = h.amount + '₽';
-        if (h.type === 'earned') { amtClass = 'hist-earned'; amtStr = '+' + h.amount + '₽'; }
-        if (h.type === 'paid') { amtClass = 'hist-paid-student'; amtStr = '−' + h.amount + '₽'; }
-        return `<div class="hist-item">
-          <div class="hist-left">
-            <div class="hist-name">${h.name}</div>
-            <div class="hist-date">${new Date(h.date).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
-          </div>
-          <div class="hist-amount ${amtClass}">${amtStr}</div>
-        </div>`;
-      }).join('');
+    html += S.history.slice().reverse().map(h => {
+      let amtClass = 'hist-fine', amtStr = h.amount + '₽';
+      if (h.type === 'earned') { amtClass = 'hist-earned'; amtStr = '+' + h.amount + '₽'; }
+      if (h.type === 'paid') { amtClass = 'hist-paid-student'; amtStr = '−' + h.amount + '₽'; }
+      return `<div class="hist-item">
+        <div class="hist-left">
+          <div class="hist-name">${h.name}</div>
+          <div class="hist-date">${new Date(h.date).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <div class="hist-amount ${amtClass}">${amtStr}</div>
+      </div>`;
+    }).join('');
     html += '</div>';
   }
 
@@ -1298,3 +1293,69 @@ function checkInactivityTimer() {
 // (called in createTask)
 
 
+
+// ── DEADLINES ──
+function checkDeadlinesSync() {
+  const now = new Date();
+  S.tasks.forEach(t => {
+    if (t.status === 'active' && new Date(t.deadline) < now) {
+      t.status = 'overdue'; t.overdueAt = t.overdueAt || now.toISOString();
+    }
+    if (t.status === 'overdue' && t.overdueAt) {
+      const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000);
+      if (now > expiry) t.status = 'burned';
+    }
+    if (t.status === 'pending' && new Date(t.deadline) < now) {
+      t.status = 'burned';
+    }
+  });
+}
+
+function checkDeadlines() {
+  checkInactivityTimer();
+  const now = new Date(); let changed = false;
+  S.tasks.forEach(t => {
+    if (t.status === 'active' && new Date(t.deadline) < now) {
+      t.status = 'overdue'; t.overdueAt = t.overdueAt || now.toISOString(); changed = true;
+    }
+    if (t.status === 'overdue' && t.overdueAt) {
+      const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000);
+      if (now > expiry) { t.status = 'burned'; changed = true; }
+    }
+    if (t.status === 'pending' && new Date(t.deadline) < now) {
+      t.status = 'burned'; changed = true;
+    }
+  });
+  if (changed) { save(); render(); }
+  setTimeout(checkDeadlines, 60000);
+}
+
+// ── UTILS ──
+function showScreen(name) {
+  console.log('showScreen:', name);
+  const map = { onboard:'s-onboard', pin:'s-pin', app:'s-app' };
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(map[name]);
+  if (!el) { console.error('Screen element not found:', map[name]); return; }
+  el.classList.add('active');
+  console.log('Screen shown:', name);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el =>
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
+);
+
+function hideTutorial() {}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+init();
+</script>
+</body>
+</html>
