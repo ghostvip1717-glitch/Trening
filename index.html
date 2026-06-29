@@ -169,6 +169,42 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-size: 12px; color: var(--muted); }
 
+
+/* CALENDAR */
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-month { font-family: var(--display); font-size: 13px; font-weight: 700; }
+.cal-nav { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--muted); cursor: pointer; font-size: 14px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
+.cal-day-name { text-align: center; font-size: 10px; color: var(--muted); padding: 4px 0; font-weight: 600; }
+.cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; position: relative; cursor: default; background: var(--surface); }
+.cal-day.empty { background: transparent; }
+.cal-day.today { border: 1.5px solid var(--accent); color: var(--accent); }
+.cal-day.has-done { background: rgba(0,214,143,0.15); color: var(--green); }
+.cal-day.has-failed { background: rgba(160,160,192,0.1); color: var(--muted); }
+.cal-day.has-both { background: rgba(255,211,42,0.1); color: var(--yellow); }
+.cal-dot { width: 4px; height: 4px; border-radius: 50%; position: absolute; bottom: 3px; }
+.cal-legend { display: flex; gap: 16px; justify-content: center; margin-bottom: 16px; }
+.cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.cal-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* TIMER CARD */
+.timer-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+.timer-card.active { border-color: var(--orange); }
+.timer-status { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.timer-title { font-family: var(--display); font-size: 12px; font-weight: 700; }
+.timer-amount { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--yellow); }
+.timer-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
+.timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
+
+/* TUTORIAL OVERLAY */
+.tutorial-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 800; }
+.tutorial-overlay.active { display: block; }
+.tutorial-highlight { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.82), 0 0 0 3px var(--accent); z-index: 801; transition: all 0.3s; pointer-events: none; }
+.tutorial-bubble { position: absolute; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 16px; padding: 14px 16px; z-index: 802; max-width: 260px; }
+.tutorial-bubble-title { font-family: var(--display); font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--accent); }
+.tutorial-bubble-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+.tutorial-next { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 18px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
+.tutorial-arrow { position: absolute; width: 0; height: 0; }
 /* TOAST */
 .toast { position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; z-index: 300; white-space: nowrap; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -252,7 +288,7 @@ body {
   </nav>
   <nav class="bottom-nav" id="nav-coach" style="display:none">
     <button class="nav-btn" onclick="switchTab('inbox','nav-coach',this)"><span class="nav-icon">📨</span>Входящие</button>
-    <button class="nav-btn" onclick="switchTab('all','nav-coach',this)"><span class="nav-icon">📋</span>Все задачи</button>
+    <button class="nav-btn" onclick="switchTab('all','nav-coach',this)"><span class="nav-icon">📋</span>Задачи</button>
   </nav>
 
   <button class="btn-fab" id="fab" onclick="openModal('m-task')" style="display:none">＋</button>
@@ -304,6 +340,27 @@ body {
   </div>
 </div>
 
+<div class="tutorial-overlay" id="tutorial-overlay">
+  <div class="tutorial-highlight" id="tut-highlight"></div>
+  <div class="tutorial-bubble" id="tut-bubble">
+    <div class="tutorial-bubble-title" id="tut-title"></div>
+    <div class="tutorial-bubble-text" id="tut-text"></div>
+    <button class="tutorial-next" onclick="tutNext()">Далее →</button>
+  </div>
+</div>
+<!-- MODAL: ТАЙМЕР -->
+<div class="modal-overlay" id="m-timer">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Таймер бездействия</div>
+    <div class="modal-note">Если ученик не создаёт задания 48 часов — базовая сумма добавляется в долг. Далее каждые 12 часов +10% от базовой суммы.</div>
+    <div class="field"><label>Базовая сумма штрафа (₽)</label><input type="number" id="timer-amount" placeholder="500" inputmode="numeric"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('m-timer')">Отмена</button>
+      <button class="btn btn-primary" style="flex:2" onclick="startInactivityTimer()">Запустить таймер</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -313,7 +370,9 @@ if (tg) { tg.ready(); tg.expand(); }
 let S = {
   pins: {}, roles: [], role: null,
   debt: 0, tasks: [], payments: [], history: [],
-  debtProposal: null // {from, newDebt, comment, createdAt}
+  debtProposal: null, // {from, newDebt, comment, createdAt}
+  inactivityTimer: null, // {baseAmount, startedAt, lastChargedAt, active}
+  tutorialDone: false
 };
 
 let photoBase64 = null;
@@ -442,6 +501,7 @@ function launchApp() {
   switchTab(firstTab, navId, document.querySelector('#' + navId + ' .nav-btn'));
   showScreen('app'); render();
   setInterval(async () => { await load(); render(); }, 30000);
+  if (S.role === 'coach' && !S.tutorialDone) setTimeout(showTutorial, 800);
 }
 
 function switchTab(name, navId, btn) {
@@ -745,7 +805,14 @@ async function createTask() {
   const fine = parseInt(document.getElementById('t-fine').value);
   if (!name || !dl || !fine || fine <= 0) { toast('⚠️ Заполни все поля'); return; }
   S.tasks.push({ id: Date.now().toString(), name, deadline: dl, fine, status: 'pending', photo: null, createdAt: new Date().toISOString() });
-  await save(); closeModal('m-task'); render(); toast('✅ Задача создана!');
+  // Stop inactivity timer when student creates a task
+  if (S.inactivityTimer && S.inactivityTimer.active) {
+    S.inactivityTimer.active = false;
+    toast('✅ Задача создана! Таймер бездействия остановлен.');
+  } else {
+    toast('✅ Задача создана!');
+  }
+  await save(); closeModal('m-task'); render();
   document.getElementById('t-name').value = ''; document.getElementById('t-fine').value = '';
 }
 
@@ -879,6 +946,7 @@ function checkDeadlinesSync() {
 }
 
 function checkDeadlines() {
+  checkInactivityTimer();
   const now = new Date(); let changed = false;
   S.tasks.forEach(t => {
     if (t.status === 'active' && new Date(t.deadline) < now) {
@@ -912,6 +980,287 @@ function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+
+
+// ── MINI CALENDAR ──
+function renderMiniCalendar() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+  const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+  const dayMap = {};
+  S.tasks.forEach(t => {
+    if (!['done','failed'].includes(t.status)) return;
+    const d = new Date(t.deadline);
+    if (d.getFullYear() !== year || d.getMonth() !== month) return;
+    const day = d.getDate();
+    if (!dayMap[day]) dayMap[day] = { done: 0, failed: 0 };
+    if (t.status === 'done') dayMap[day].done++;
+    else dayMap[day].failed++;
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const offset = firstDay === 0 ? 6 : firstDay - 1;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  let html = `<div class="card" style="margin-bottom:12px;padding:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-family:var(--display);font-size:10px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase">${monthNames[month]} ${year}</div>
+      <div style="display:flex;gap:10px">
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:6px;height:6px;border-radius:50%;background:var(--green)"></div>Выполнено</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:6px;height:6px;border-radius:50%;background:var(--muted)"></div>Провалено</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">`;
+
+  dayNames.forEach(d => { html += `<div style="text-align:center;font-size:9px;color:var(--muted);padding:2px 0;font-weight:600">${d}</div>`; });
+  for (let i = 0; i < offset; i++) html += '<div></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today;
+    const info = dayMap[d];
+    let bg = 'var(--surface2)';
+    let color = 'var(--muted)';
+    let border = 'transparent';
+    if (isToday) { border = 'var(--accent)'; color = 'var(--accent)'; }
+    if (info) {
+      if (info.done > 0 && info.failed > 0) { bg = 'rgba(255,211,42,0.12)'; color = 'var(--yellow)'; }
+      else if (info.done > 0) { bg = 'rgba(0,214,143,0.15)'; color = 'var(--green)'; }
+      else { bg = 'rgba(160,160,192,0.1)'; color = 'var(--muted)'; }
+    }
+    html += `<div style="aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:${bg};color:${color};border:1.5px solid ${border}">${d}</div>`;
+  }
+
+  html += '</div></div>';
+  return html;
+}
+
+// ── CALENDAR (full, kept for reference) ──
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function renderCalendar(tabId) {
+  const el = document.getElementById('tab-' + tabId);
+  const now = new Date();
+  const today = now.getDate();
+  const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth();
+
+  // Build day map from finished tasks
+  const dayMap = {};
+  S.tasks.forEach(t => {
+    if (!['done','failed'].includes(t.status)) return;
+    const d = new Date(t.deadline);
+    if (d.getFullYear() !== calYear || d.getMonth() !== calMonth) return;
+    const day = d.getDate();
+    if (!dayMap[day]) dayMap[day] = { done: 0, failed: 0 };
+    if (t.status === 'done') dayMap[day].done++;
+    else dayMap[day].failed++;
+  });
+
+  const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const offset = firstDay === 0 ? 6 : firstDay - 1;
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  let html = `
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calPrev('${tabId}')">‹</button>
+      <div class="cal-month">${monthNames[calMonth]} ${calYear}</div>
+      <button class="cal-nav" onclick="calNext('${tabId}')">›</button>
+    </div>
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--green)"></div>Выполнено</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--muted)"></div>Провалено</div>
+    </div>
+    <div class="cal-grid">`;
+
+  dayNames.forEach(d => { html += `<div class="cal-day-name">${d}</div>`; });
+  for (let i = 0; i < offset; i++) html += '<div class="cal-day empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = isCurrentMonth && d === today;
+    const info = dayMap[d];
+    let cls = 'cal-day';
+    if (isToday) cls += ' today';
+    if (info) {
+      if (info.done > 0 && info.failed > 0) cls += ' has-both';
+      else if (info.done > 0) cls += ' has-done';
+      else cls += ' has-failed';
+    }
+    html += `<div class="${cls}">${d}</div>`;
+  }
+
+  html += '</div>';
+
+  // Day list below
+  const daysList = Object.entries(dayMap).sort((a,b) => b[0]-a[0]);
+  if (daysList.length) {
+    html += '<div class="section-title">Задачи за месяц</div><div class="card">';
+    daysList.forEach(([day, info]) => {
+      if (info.done) html += `<div class="hist-item"><div class="hist-left"><div class="hist-name" style="color:var(--green)">✓ Выполнено</div><div class="hist-date">${day} ${monthNames[calMonth]}</div></div><div class="hist-amount" style="color:var(--green)">${info.done} зад.</div></div>`;
+      if (info.failed) html += `<div class="hist-item"><div class="hist-left"><div class="hist-name" style="color:var(--muted)">✗ Провалено</div><div class="hist-date">${day} ${monthNames[calMonth]}</div></div><div class="hist-amount" style="color:var(--muted)">${info.failed} зад.</div></div>`;
+    });
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function calPrev(tabId) { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(tabId); }
+function calNext(tabId) { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(tabId); }
+
+// ── INACTIVITY TIMER ──
+function renderTimerCard(role) {
+  const t = S.inactivityTimer;
+  if (!t || !t.active) {
+    if (role === 'coach') {
+      return `<div class="timer-card" id="timer-card">
+        <div class="timer-status"><div class="timer-title">⏱ Таймер бездействия</div><span class="badge badge-burned">Не активен</span></div>
+        <div class="timer-inactive">Запусти таймер чтобы штрафовать за бездействие</div>
+        <button class="btn btn-orange" style="width:100%;margin-top:10px" id="start-timer-btn" onclick="openModal('m-timer')">▶ Запустить таймер</button>
+      </div>`;
+    } else {
+      return `<div class="timer-card"><div class="timer-status"><div class="timer-title">⏱ Таймер бездействия</div><span class="badge badge-burned">Не активен</span></div></div>`;
+    }
+  }
+
+  const now = new Date();
+  const startedAt = new Date(t.startedAt);
+  const hoursElapsed = (now - startedAt) / 3600000;
+  const base = t.baseAmount;
+
+  // Calculate next charge
+  let nextChargeIn = '';
+  if (hoursElapsed < 48) {
+    const h = Math.floor(48 - hoursElapsed);
+    const m = Math.floor((48 - hoursElapsed - h) * 60);
+    nextChargeIn = `Первый штраф через ${h}ч ${m}м`;
+  } else {
+    const lastCharge = t.lastChargedAt ? new Date(t.lastChargedAt) : new Date(startedAt.getTime() + 48*3600000);
+    const nextCharge = new Date(lastCharge.getTime() + 12*3600000);
+    const diffH = Math.floor((nextCharge - now) / 3600000);
+    const diffM = Math.floor(((nextCharge - now) % 3600000) / 60000);
+    nextChargeIn = diffH > 0 ? `Следующий штраф через ${diffH}ч ${diffM}м` : `Следующий штраф через ${diffM}м`;
+  }
+
+  const stopBtn = role === 'coach' ? `<button class="btn btn-neutral" style="width:100%;margin-top:8px" onclick="stopInactivityTimer()">⏹ Остановить таймер</button>` : '';
+
+  return `<div class="timer-card active" id="timer-card">
+    <div class="timer-status"><div class="timer-title">⏱ Таймер бездействия</div><span class="badge badge-wait">Активен</span></div>
+    <div class="timer-amount">${base}₽ / базовый штраф</div>
+    <div class="timer-info">
+      Запущен: ${startedAt.toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}<br>
+      ${nextChargeIn}
+    </div>
+    ${stopBtn}
+  </div>`;
+}
+
+async function startInactivityTimer() {
+  const amount = parseInt(document.getElementById('timer-amount').value);
+  if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
+  S.inactivityTimer = { baseAmount: amount, startedAt: new Date().toISOString(), lastChargedAt: null, active: true };
+  S.tutorialDone = true;
+  await save(); closeModal('m-timer'); render(); toast('▶ Таймер запущен!');
+  hideTutorial();
+}
+
+async function stopInactivityTimer() {
+  S.inactivityTimer = { ...S.inactivityTimer, active: false };
+  await save(); render(); toast('⏹ Таймер остановлен');
+}
+
+function checkInactivityTimer() {
+  if (!S.inactivityTimer || !S.inactivityTimer.active) return;
+  const t = S.inactivityTimer;
+  const now = new Date();
+  const startedAt = new Date(t.startedAt);
+  const hoursElapsed = (now - startedAt) / 3600000;
+  if (hoursElapsed < 48) return;
+
+  const lastCharge = t.lastChargedAt ? new Date(t.lastChargedAt) : new Date(startedAt.getTime() + 48*3600000);
+  const hoursSinceLast = (now - lastCharge) / 3600000;
+
+  // First charge at 48h
+  if (!t.lastChargedAt && hoursElapsed >= 48) {
+    S.debt += t.baseAmount;
+    S.history.push({ type: 'fine', name: 'Штраф за бездействие (48ч)', amount: t.baseAmount, date: now.toISOString() });
+    S.inactivityTimer.lastChargedAt = now.toISOString();
+    save(); render();
+    return;
+  }
+
+  // Every 12h after: +10% of base
+  if (hoursSinceLast >= 12) {
+    const charge = Math.round(t.baseAmount * 0.1);
+    S.debt += charge;
+    S.history.push({ type: 'fine', name: 'Штраф за бездействие (+10%)', amount: charge, date: now.toISOString() });
+    S.inactivityTimer.lastChargedAt = now.toISOString();
+    save(); render();
+  }
+}
+
+// Stop timer when student creates task
+// (called in createTask)
+
+// ── TUTORIAL ──
+const tutSteps = [
+  {
+    targetId: 'start-timer-btn',
+    title: '▶ Таймер бездействия',
+    text: 'Нажми эту кнопку чтобы запустить таймер. Если ученик не создаёт задания 48 часов — базовый штраф добавляется в долг. Далее каждые 12 часов +10% от базового штрафа. Таймер останавливается когда ученик создаёт задание.'
+  }
+];
+
+let tutStep = 0;
+
+function showTutorial() {
+  if (S.tutorialDone || S.role !== 'coach') return;
+  // Wait for timer card to render
+  setTimeout(() => {
+    tutStep = 0;
+    document.getElementById('tutorial-overlay').classList.add('active');
+    renderTutStep();
+  }, 500);
+}
+
+function renderTutStep() {
+  const step = tutSteps[tutStep];
+  const el = document.getElementById(step.targetId);
+  if (!el) { tutNext(); return; }
+  const rect = el.getBoundingClientRect();
+  const pad = 6;
+  const hl = document.getElementById('tut-highlight');
+  hl.style.top = (rect.top - pad) + 'px';
+  hl.style.left = (rect.left - pad) + 'px';
+  hl.style.width = (rect.width + pad*2) + 'px';
+  hl.style.height = (rect.height + pad*2) + 'px';
+
+  const bubble = document.getElementById('tut-bubble');
+  document.getElementById('tut-title').textContent = step.title;
+  document.getElementById('tut-text').textContent = step.text;
+
+  // Position bubble below or above
+  const bubbleTop = rect.bottom + pad + 12;
+  const bubbleLeft = Math.max(10, Math.min(rect.left, window.innerWidth - 280));
+  bubble.style.top = (bubbleTop > window.innerHeight - 160 ? rect.top - 160 : bubbleTop) + 'px';
+  bubble.style.left = bubbleLeft + 'px';
+}
+
+function tutNext() {
+  tutStep++;
+  if (tutStep >= tutSteps.length) { hideTutorial(); return; }
+  renderTutStep();
+}
+
+function hideTutorial() {
+  document.getElementById('tutorial-overlay').classList.remove('active');
 }
 
 init();
