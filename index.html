@@ -196,6 +196,39 @@ body {
 .timer-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
 .timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
 
+/* LOADING */
+.loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 500; flex-direction: column; gap: 12px; }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 12px; color: var(--muted); }
+
+
+/* CALENDAR */
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-month { font-family: var(--display); font-size: 13px; font-weight: 700; }
+.cal-nav { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--muted); cursor: pointer; font-size: 14px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
+.cal-day-name { text-align: center; font-size: 10px; color: var(--muted); padding: 4px 0; font-weight: 600; }
+.cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; position: relative; cursor: default; background: var(--surface); }
+.cal-day.empty { background: transparent; }
+.cal-day.today { border: 1.5px solid var(--accent); color: var(--accent); }
+.cal-day.has-done { background: rgba(0,214,143,0.15); color: var(--green); }
+.cal-day.has-failed { background: rgba(160,160,192,0.1); color: var(--muted); }
+.cal-day.has-both { background: rgba(255,211,42,0.1); color: var(--yellow); }
+.cal-dot { width: 4px; height: 4px; border-radius: 50%; position: absolute; bottom: 3px; }
+.cal-legend { display: flex; gap: 16px; justify-content: center; margin-bottom: 16px; }
+.cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.cal-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* TIMER CARD */
+.timer-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+.timer-card.active { border-color: var(--orange); }
+.timer-status { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.timer-title { font-family: var(--display); font-size: 12px; font-weight: 700; }
+.timer-amount { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--yellow); }
+.timer-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
+.timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
+
 /* TUTORIAL OVERLAY */
 .tutorial-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 800; }
 .tutorial-overlay.active { display: block; }
@@ -340,14 +373,6 @@ body {
   </div>
 </div>
 
-<div class="tutorial-overlay" id="tutorial-overlay">
-  <div class="tutorial-highlight" id="tut-highlight"></div>
-  <div class="tutorial-bubble" id="tut-bubble">
-    <div class="tutorial-bubble-title" id="tut-title"></div>
-    <div class="tutorial-bubble-text" id="tut-text"></div>
-    <button class="tutorial-next" onclick="tutNext()">Далее →</button>
-  </div>
-</div>
 <!-- MODAL: ТАЙМЕР -->
 <div class="modal-overlay" id="m-timer">
   <div class="modal">
@@ -371,8 +396,7 @@ let S = {
   pins: {}, roles: [], role: null,
   debt: 0, tasks: [], payments: [], history: [],
   debtProposal: null, // {from, newDebt, comment, createdAt}
-  inactivityTimer: null, // {baseAmount, startedAt, lastChargedAt, active}
-  tutorialDone: false
+  inactivityTimer: null // {baseAmount, startedAt, lastChargedAt, active}
 };
 
 let photoBase64 = null;
@@ -394,7 +418,13 @@ async function save() {
 
 async function load() {
   try {
-    const r = await fetch(BIN_URL + '/latest', { headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' } });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const r = await fetch(BIN_URL + '/latest', {
+      headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' },
+      signal: controller.signal
+    });
+    clearTimeout(timer);
     if (!r.ok) return false;
     const data = await r.json();
     if (data && data.pins !== undefined) { S = data; return true; }
@@ -467,6 +497,8 @@ async function init() {
   document.getElementById('loading').style.display = 'flex';
   const ok = await load();
   document.getElementById('loading').style.display = 'none';
+  // Always reset role - require PIN on every session
+  S.role = null;
   checkDeadlines();
   if (!ok || S.roles.length === 0) { showOnboard(); return; }
   if (S.roles.length >= 2) { showLoginPin(); return; }
@@ -501,7 +533,7 @@ function launchApp() {
   switchTab(firstTab, navId, document.querySelector('#' + navId + ' .nav-btn'));
   showScreen('app'); render();
   setInterval(async () => { await load(); render(); }, 30000);
-  if (S.role === 'coach' && !S.tutorialDone) setTimeout(showTutorial, 800);
+
 }
 
 function switchTab(name, navId, btn) {
@@ -575,10 +607,13 @@ function renderTasks() {
     </div>`;
   }
 
+  html += renderMiniCalendar();
+  html += renderTimerCard('student');
+
   if (!active.length) {
     html += '<div class="empty"><div class="empty-icon">📋</div>Нет активных задач.<br>Нажми + чтобы создать.</div>';
   } else {
-    html += active.map(studentTaskCard).join('');
+    html += active.map(t => taskCard(t, 'student')).join('');
   }
 
   el.innerHTML = html;
@@ -690,28 +725,17 @@ function renderInbox() {
     </div>`;
   }
 
-  const newTasks = S.tasks.filter(t => t.status === 'pending');
-  if (newTasks.length) {
-    html += '<div class="section-title">Новые задачи</div>';
-    html += newTasks.map(coachNewTaskCard).join('');
+  const inbox = S.tasks.filter(t => ['pending','reported','overdue'].includes(t.status));
+  if (inbox.length) {
+    html += inbox.map(t => taskCard(t, 'coach')).join('');
   }
 
-  const reports = S.tasks.filter(t => t.status === 'reported');
-  if (reports.length) {
-    html += '<div class="section-title" style="margin-top:16px">Фото-отчёты</div>';
-    html += reports.map(coachReportCard).join('');
+  if (!S.debtProposal && !inbox.length) {
+    html += '<div class="empty"><div class="empty-icon">✅</div>Всё проверено.<br>Новых входящих нет.</div>';
   }
 
-  const overdue = S.tasks.filter(t => t.status === 'overdue');
-  if (overdue.length) {
-    html += '<div class="section-title" style="margin-top:16px">Просроченные задачи</div>';
-    html += overdue.map(coachOverdueCard).join('');
-  }
-
-  if (!S.debtProposal && !newTasks.length && !reports.length && !overdue.length) {
-    html = '<div class="empty"><div class="empty-icon">✅</div>Всё проверено.<br>Новых входящих нет.</div>';
-  }
-
+  html += renderMiniCalendar();
+  html += renderTimerCard('coach');
   el.innerHTML = html;
 }
 
@@ -976,6 +1000,8 @@ document.querySelectorAll('.modal-overlay').forEach(el =>
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
 );
 
+function hideTutorial() {}
+
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
@@ -1166,9 +1192,7 @@ async function startInactivityTimer() {
   const amount = parseInt(document.getElementById('timer-amount').value);
   if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
   S.inactivityTimer = { baseAmount: amount, startedAt: new Date().toISOString(), lastChargedAt: null, active: true };
-  S.tutorialDone = true;
   await save(); closeModal('m-timer'); render(); toast('▶ Таймер запущен!');
-  hideTutorial();
 }
 
 async function stopInactivityTimer() {
@@ -1209,61 +1233,4 @@ function checkInactivityTimer() {
 // Stop timer when student creates task
 // (called in createTask)
 
-// ── TUTORIAL ──
-const tutSteps = [
-  {
-    targetId: 'start-timer-btn',
-    title: '▶ Таймер бездействия',
-    text: 'Нажми эту кнопку чтобы запустить таймер. Если ученик не создаёт задания 48 часов — базовый штраф добавляется в долг. Далее каждые 12 часов +10% от базового штрафа. Таймер останавливается когда ученик создаёт задание.'
-  }
-];
 
-let tutStep = 0;
-
-function showTutorial() {
-  if (S.tutorialDone || S.role !== 'coach') return;
-  // Wait for timer card to render
-  setTimeout(() => {
-    tutStep = 0;
-    document.getElementById('tutorial-overlay').classList.add('active');
-    renderTutStep();
-  }, 500);
-}
-
-function renderTutStep() {
-  const step = tutSteps[tutStep];
-  const el = document.getElementById(step.targetId);
-  if (!el) { tutNext(); return; }
-  const rect = el.getBoundingClientRect();
-  const pad = 6;
-  const hl = document.getElementById('tut-highlight');
-  hl.style.top = (rect.top - pad) + 'px';
-  hl.style.left = (rect.left - pad) + 'px';
-  hl.style.width = (rect.width + pad*2) + 'px';
-  hl.style.height = (rect.height + pad*2) + 'px';
-
-  const bubble = document.getElementById('tut-bubble');
-  document.getElementById('tut-title').textContent = step.title;
-  document.getElementById('tut-text').textContent = step.text;
-
-  // Position bubble below or above
-  const bubbleTop = rect.bottom + pad + 12;
-  const bubbleLeft = Math.max(10, Math.min(rect.left, window.innerWidth - 280));
-  bubble.style.top = (bubbleTop > window.innerHeight - 160 ? rect.top - 160 : bubbleTop) + 'px';
-  bubble.style.left = bubbleLeft + 'px';
-}
-
-function tutNext() {
-  tutStep++;
-  if (tutStep >= tutSteps.length) { hideTutorial(); return; }
-  renderTutStep();
-}
-
-function hideTutorial() {
-  document.getElementById('tutorial-overlay').classList.remove('active');
-}
-
-init();
-</script>
-</body>
-</html>
