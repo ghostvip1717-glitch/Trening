@@ -231,7 +231,10 @@ body {
     </div>
     <div class="debt-display">
       <div class="debt-label" id="debt-label">Долг</div>
-      <div class="debt-number" id="debt-number">0</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <div class="debt-number" id="debt-number">0</div>
+        <button onclick="openDebtModal(S.role)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--muted);font-size:12px;cursor:pointer">✏️</button>
+      </div>
       <div class="debt-rub">рублей</div>
     </div>
   </div>
@@ -517,21 +520,23 @@ function renderTasks() {
     html += active.map(studentTaskCard).join('');
   }
 
-  html += `<button class="btn btn-yellow" style="width:100%;margin-top:8px" onclick="openDebtModal('student')">✏️ Предложить изменение долга</button>`;
   el.innerHTML = html;
 }
 
-function studentTaskCard(t) {
+function taskCard(t, role) {
   const now = new Date();
   const dl = new Date(t.deadline);
   const over = dl < now;
-  const soon = dl - now < 3600000 && !over;
   const dlStr = deadlineStr(t.deadline);
 
   const badges = {
     pending: '<span class="badge badge-wait">⏳ Ждёт подтверждения тренера</span>',
     active: '<span class="badge badge-active">● Активна</span>',
     reported: '<span class="badge badge-reported">📸 Отчёт на проверке</span>',
+    overdue: '<span class="badge badge-wait">⚠ Просрочена</span>',
+    done: '<span class="badge badge-done">✓ Выполнено</span>',
+    failed: '<span class="badge badge-failed">✗ Провалено</span>',
+    burned: '<span class="badge badge-burned">— Сгорела</span>',
   };
 
   let timer = '';
@@ -540,27 +545,56 @@ function studentTaskCard(t) {
   }
   if (t.status === 'overdue' && t.overdueAt) {
     const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000).toISOString();
-    timer = timerHTML(t.overdueAt, expiry, 'Тренер подтверждает просрочку');
+    timer = timerHTML(t.overdueAt, expiry, 'На подтверждение просрочки');
   }
 
   let actions = '';
-  if (t.status === 'active') {
-    actions = `<div class="card-actions"><button class="btn btn-green" onclick="openReport('${t.id}')">📸 Отправить фото</button></div>`;
+  if (role === 'student') {
+    if (t.status === 'active') {
+      actions = `<div class="card-actions"><button class="btn btn-green" onclick="openReport('${t.id}')">📸 Отправить фото</button></div>`;
+    }
+  } else if (role === 'coach') {
+    if (t.status === 'pending') {
+      actions = `<div class="card-actions"><button class="btn btn-green" onclick="confirmTask('${t.id}')">✓ Видел, подтверждаю</button></div>`;
+    } else if (t.status === 'reported') {
+      actions = `<div class="card-actions">
+        ${t.photo ? `<img src="${t.photo}" class="report-photo" style="display:block;width:100%;margin-bottom:8px">` : ''}
+        <button class="btn btn-green" onclick="reviewTask('${t.id}',true)">✓ Принять</button>
+        <button class="btn btn-neutral" onclick="reviewTask('${t.id}',false)">✗ Отклонить</button>
+      </div>`;
+    } else if (t.status === 'overdue') {
+      actions = `<div class="card-actions"><button class="btn btn-orange" onclick="confirmOverdue('${t.id}')">👁 Видел просрочку → штраф</button></div>`;
+    }
+  }
+
+  // Show photo for coach inline in reported card
+  let photoHtml = '';
+  if (role === 'coach' && t.status === 'reported' && t.photo) {
+    photoHtml = `<img src="${t.photo}" class="report-photo">`;
   }
 
   return `<div class="card">
     <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    <div class="card-deadline ${over&&t.status==='active'?'':''}">⏰ ${dlStr}</div>
-    ${timer}${badges[t.status]||''}${actions}
+    <div class="card-deadline">⏰ ${dlStr}</div>
+    ${photoHtml}${timer}${badges[t.status]||''}${actions}
   </div>`;
 }
+
+function studentTaskCard(t) { return taskCard(t, 'student'); }
 
 // STUDENT HISTORY
 function renderStudentHistory() {
   const el = document.getElementById('tab-history');
-  let html = '<div class="section-title">История</div>';
+  let html = '<div class="section-title">Все задачи</div>';
+  const finished = S.tasks.filter(t => ['done','failed','burned'].includes(t.status));
+  if (!finished.length) {
+    html += '<div class="empty"><div class="empty-icon">📋</div>Завершённых задач пока нет</div>';
+  } else {
+    html += finished.slice().reverse().map(t => taskCard(t, 'student')).join('');
+  }
+  html += '<div class="section-title" style="margin-top:16px">История платежей</div>';
   if (!S.history.length) {
-    html += '<div class="empty"><div class="empty-icon">📜</div>История пуста</div>';
+    html += '<div class="empty" style="padding:20px"><div class="empty-icon">📜</div>История пуста</div>';
   } else {
     html += '<div class="card">' + S.history.slice().reverse().map(h => {
       let amtClass = 'hist-fine', amtStr = '−' + h.amount + '₽';
@@ -617,7 +651,6 @@ function renderInbox() {
     html = '<div class="empty"><div class="empty-icon">✅</div>Всё проверено.<br>Новых входящих нет.</div>';
   }
 
-  html += `<button class="btn btn-yellow" style="width:100%;margin-top:16px" onclick="openDebtModal('coach')">✏️ Изменить сумму долга</button>`;
   el.innerHTML = html;
 }
 
