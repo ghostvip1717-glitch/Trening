@@ -164,7 +164,7 @@ body {
 .modal-note { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
 
 /* TUTORIAL */
-.tut-overlay { display: none; position: fixed; inset: 0; z-index: 800; pointer-events: none; }
+.tut-overlay { display: none; position: fixed; inset: 0; z-index: 800; pointer-events: all; }
 .tut-overlay.active { display: block; }
 .tut-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
 .tut-highlight {
@@ -221,7 +221,7 @@ body {
 .timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
 
 /* TUTORIAL */
-.tut-overlay { display: none; position: fixed; inset: 0; z-index: 800; pointer-events: none; }
+.tut-overlay { display: none; position: fixed; inset: 0; z-index: 800; pointer-events: all; }
 .tut-overlay.active { display: block; }
 .tut-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
 .tut-highlight {
@@ -435,7 +435,7 @@ body {
   </div>
 </div>
 <div class="tut-overlay" id="tut-overlay">
-  <div class="tut-backdrop" onclick="skipTutorial()"></div>
+  <div class="tut-backdrop"></div>
   <div class="tut-highlight" id="tut-hl"></div>
   <div class="tut-arrow" id="tut-arrow"></div>
   <div class="tut-bubble" id="tut-bubble">
@@ -1177,7 +1177,7 @@ function renderMiniCalendar() {
       else if (info.done > 0) { bg = 'rgba(0,214,143,0.15)'; color = 'var(--green)'; }
       else { bg = 'rgba(160,160,192,0.1)'; color = 'var(--muted)'; }
     }
-    html += `<div style="aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:${bg};color:${color};border:1.5px solid ${border}">${d}</div>`;
+    html += `<div style="aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:${bg};color:${color};border:1.5px solid ${border};max-width:44px;max-height:44px">${d}</div>`;
   }
 
   html += '</div></div>';
@@ -1434,8 +1434,10 @@ function toast(msg) {
 
 // ── TUTORIAL ──
 function showTutorial() {
+  console.log('showTutorial called, tutorialDone:', S.tutorialDone, 'role:', S.role);
   if (S.tutorialDone || S.role !== 'coach') return;
   const btn = document.getElementById('start-timer-btn');
+  console.log('start-timer-btn found:', !!btn);
   if (!btn) { setTimeout(showTutorial, 300); return; }
 
   const rect = btn.getBoundingClientRect();
