@@ -407,29 +407,81 @@ const API_KEY = '$2a$10$O.QnY26A0QLeud4xNtUmeOw5MS9nB1D6C1dmvPSl85WUEnwZKyE1i';
 const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
 async function save() {
+  // Always save to localStorage immediately
+  try { localStorage.setItem('acc-backup', JSON.stringify(S)); } catch(e) {}
+  // Try JSONBin in background
   try {
-    await fetch(BIN_URL, {
+    fetch(BIN_URL, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
       body: JSON.stringify(S)
-    });
-  } catch(e) { console.error('Save error', e); }
+    }).catch(() => {});
+  } catch(e) {}
+}
+
+function mergeState(loaded) {
+  // Safely merge loaded data with defaults - ignore unknown fields, fill missing ones
+  const defaults = {
+    pins: {}, roles: [], role: null,
+    debt: 0, tasks: [], payments: [], history: [],
+    debtProposal: null, inactivityTimer: null
+  };
+  const merged = { ...defaults };
+  if (loaded && typeof loaded === 'object') {
+    if (loaded.pins && typeof loaded.pins === 'object') merged.pins = loaded.pins;
+    if (Array.isArray(loaded.roles)) merged.roles = loaded.roles;
+    merged.role = null; // Always reset role - require PIN
+    if (typeof loaded.debt === 'number') merged.debt = loaded.debt;
+    if (Array.isArray(loaded.tasks)) merged.tasks = loaded.tasks;
+    if (Array.isArray(loaded.payments)) merged.payments = loaded.payments;
+    if (Array.isArray(loaded.history)) merged.history = loaded.history;
+    if (loaded.debtProposal !== undefined) merged.debtProposal = loaded.debtProposal;
+    if (loaded.inactivityTimer !== undefined) merged.inactivityTimer = loaded.inactivityTimer;
+  }
+  return merged;
 }
 
 async function load() {
+  console.log('--- load() called ---');
+  console.log('BIN_URL:', BIN_URL);
+  // Try JSONBin first with short timeout
   try {
+    console.log('Fetching JSONBin...');
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
+    const timer = setTimeout(() => { console.log('JSONBin TIMEOUT after 4s'); controller.abort(); }, 4000);
     const r = await fetch(BIN_URL + '/latest', {
       headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' },
       signal: controller.signal
     });
     clearTimeout(timer);
-    if (!r.ok) return false;
-    const data = await r.json();
-    if (data && data.pins !== undefined) { S = data; return true; }
-    if (data && data.record) { S = data.record; return true; }
-  } catch(e) { console.error('Load error', e); }
+    console.log('JSONBin response status:', r.status, r.ok);
+    if (r.ok) {
+      const data = await r.json();
+      console.log('JSONBin data keys:', Object.keys(data));
+      const record = data?.record || (data?.pins !== undefined ? data : null);
+      console.log('record found:', !!record);
+      if (record) {
+        S = mergeState(record);
+        localStorage.setItem('acc-backup', JSON.stringify(S));
+        console.log('Loaded from JSONBin OK, roles:', S.roles);
+        return true;
+      }
+    }
+  } catch(e) { console.log('JSONBin ERROR:', e.message, e.name); }
+
+  // Fallback to localStorage
+  console.log('Trying localStorage fallback...');
+  try {
+    const backup = localStorage.getItem('acc-backup');
+    console.log('localStorage backup exists:', !!backup);
+    if (backup) {
+      S = mergeState(JSON.parse(backup));
+      console.log('Loaded from localStorage OK, roles:', S.roles);
+      return true;
+    }
+  } catch(e) { console.log('localStorage ERROR:', e); }
+  
+  console.log('No data found anywhere, starting fresh');
   return false;
 }
 
@@ -997,9 +1049,13 @@ function checkDeadlines() {
 }
 
 function showScreen(name) {
+  console.log('showScreen:', name);
   const map = { onboard:'s-onboard', pin:'s-pin', app:'s-app' };
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(map[name]).classList.add('active');
+  const el = document.getElementById(map[name]);
+  if (!el) { console.error('Screen element not found:', map[name]); return; }
+  el.classList.add('active');
+  console.log('Screen shown:', name);
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
