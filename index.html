@@ -490,6 +490,7 @@ function deadlineStr(dl) {
 
 // RENDER
 function render() {
+  checkDeadlinesSync();
   document.getElementById('debt-number').textContent = S.debt;
   if (S.role === 'student') { renderTasks(); renderStudentHistory(); }
   else { renderInbox(); renderAll(); }
@@ -614,7 +615,7 @@ function renderStudentHistory() {
 // COACH INBOX
 function renderInbox() {
   const el = document.getElementById('tab-inbox');
-  let html = '';
+  let html = '<div class="section-title">Входящие</div>';
 
   // Debt proposal for coach
   if (S.debtProposal && S.debtProposal.from === 'student') {
@@ -861,6 +862,22 @@ async function confirmDebt(ok) {
 }
 
 // DEADLINES
+function checkDeadlinesSync() {
+  const now = new Date();
+  S.tasks.forEach(t => {
+    if (t.status === 'active' && new Date(t.deadline) < now) {
+      t.status = 'overdue'; t.overdueAt = t.overdueAt || now.toISOString();
+    }
+    if (t.status === 'overdue' && t.overdueAt) {
+      const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000);
+      if (now > expiry) t.status = 'burned';
+    }
+    if (t.status === 'pending' && new Date(t.deadline) < now) {
+      t.status = 'burned';
+    }
+  });
+}
+
 function checkDeadlines() {
   const now = new Date(); let changed = false;
   S.tasks.forEach(t => {
