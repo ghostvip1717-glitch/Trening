@@ -499,7 +499,7 @@ function render() {
 // STUDENT TASKS
 function renderTasks() {
   const el = document.getElementById('tab-tasks');
-  const active = S.tasks.filter(t => ['pending','active','reported'].includes(t.status));
+  const active = S.tasks.filter(t => ['pending','active','reported','overdue'].includes(t.status));
   let html = '<div class="section-title">Мои задачи</div>';
 
   // Debt proposal for student
@@ -615,7 +615,7 @@ function renderStudentHistory() {
 // COACH INBOX
 function renderInbox() {
   const el = document.getElementById('tab-inbox');
-  let html = '<div class="section-title">Входящие</div>';
+  let html = '';
 
   // Debt proposal for coach
   if (S.debtProposal && S.debtProposal.from === 'student') {
