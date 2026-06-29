@@ -163,6 +163,30 @@ body {
 .modal-btns { display: flex; gap: 10px; margin-top: 12px; }
 .modal-note { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
 
+/* TUTORIAL */
+.tut-overlay { display: none; position: fixed; inset: 0; z-index: 800; pointer-events: none; }
+.tut-overlay.active { display: block; }
+.tut-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
+.tut-highlight {
+  position: absolute; border-radius: 12px;
+  box-shadow: 0 0 0 3px var(--accent), 0 0 0 6px rgba(108,92,231,0.3);
+  transition: all 0.3s; pointer-events: none; z-index: 802;
+}
+.tut-bubble {
+  position: absolute; background: var(--surface);
+  border: 1.5px solid var(--accent); border-radius: 14px;
+  padding: 14px 16px; z-index: 803; max-width: 240px;
+  pointer-events: all;
+}
+.tut-arrow {
+  position: absolute; width: 0; height: 0;
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-bottom: 10px solid var(--accent);
+}
+.tut-bubble-title { font-family: var(--display); font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.tut-bubble-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+.tut-next { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
+
 /* LOADING */
 .loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 500; flex-direction: column; gap: 12px; }
 .loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -195,6 +219,30 @@ body {
 .timer-amount { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--yellow); }
 .timer-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
 .timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
+
+/* TUTORIAL */
+.tut-overlay { display: none; position: fixed; inset: 0; z-index: 800; pointer-events: none; }
+.tut-overlay.active { display: block; }
+.tut-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
+.tut-highlight {
+  position: absolute; border-radius: 12px;
+  box-shadow: 0 0 0 3px var(--accent), 0 0 0 6px rgba(108,92,231,0.3);
+  transition: all 0.3s; pointer-events: none; z-index: 802;
+}
+.tut-bubble {
+  position: absolute; background: var(--surface);
+  border: 1.5px solid var(--accent); border-radius: 14px;
+  padding: 14px 16px; z-index: 803; max-width: 240px;
+  pointer-events: all;
+}
+.tut-arrow {
+  position: absolute; width: 0; height: 0;
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-bottom: 10px solid var(--accent);
+}
+.tut-bubble-title { font-family: var(--display); font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.tut-bubble-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+.tut-next { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
 
 /* LOADING */
 .loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 500; flex-direction: column; gap: 12px; }
@@ -320,7 +368,7 @@ body {
     <button class="nav-btn" onclick="switchTab('history','nav-student',this)"><span class="nav-icon">📜</span>История</button>
   </nav>
   <nav class="bottom-nav" id="nav-coach" style="display:none">
-    <button class="nav-btn" onclick="switchTab('inbox','nav-coach',this)"><span class="nav-icon">📨</span>Входящие</button>
+    <button class="nav-btn" onclick="switchTab('inbox','nav-coach',this)"><span class="nav-icon">🏠</span>Главная</button>
     <button class="nav-btn" onclick="switchTab('all','nav-coach',this)"><span class="nav-icon">📋</span>Задачи</button>
   </nav>
 
@@ -386,6 +434,16 @@ body {
     </div>
   </div>
 </div>
+<div class="tut-overlay" id="tut-overlay">
+  <div class="tut-backdrop" onclick="skipTutorial()"></div>
+  <div class="tut-highlight" id="tut-hl"></div>
+  <div class="tut-arrow" id="tut-arrow"></div>
+  <div class="tut-bubble" id="tut-bubble">
+    <div class="tut-bubble-title">⏱ Таймер бездействия</div>
+    <div class="tut-bubble-text">Нажми эту кнопку чтобы запустить таймер. Если ученик не создаёт задания 48 часов — базовый штраф добавляется в долг. Каждые 12 часов после — ещё +10%.</div>
+    <button class="tut-next" onclick="skipTutorial()">Понятно →</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -396,7 +454,8 @@ let S = {
   pins: {}, roles: [], role: null,
   debt: 0, tasks: [], payments: [], history: [],
   debtProposal: null, // {from, newDebt, comment, createdAt}
-  inactivityTimer: null // {baseAmount, startedAt, lastChargedAt, active}
+  inactivityTimer: null, // {baseAmount, startedAt, lastChargedAt, active}
+  tutorialDone: false
 };
 
 let photoBase64 = null;
@@ -437,6 +496,7 @@ function mergeState(loaded) {
     if (Array.isArray(loaded.history)) merged.history = loaded.history;
     if (loaded.debtProposal !== undefined) merged.debtProposal = loaded.debtProposal;
     if (loaded.inactivityTimer !== undefined) merged.inactivityTimer = loaded.inactivityTimer;
+    if (loaded.tutorialDone !== undefined) merged.tutorialDone = loaded.tutorialDone;
   }
   return merged;
 }
@@ -789,6 +849,7 @@ function renderInbox() {
   html += renderMiniCalendar();
   html += renderTimerCard('coach');
   el.innerHTML = html;
+  if (!S.tutorialDone && S.role === 'coach') setTimeout(showTutorial, 150);
 }
 
 function coachNewTaskCard(t) {
@@ -872,8 +933,6 @@ function renderAll() {
       </div>`).join('');
   }
 
-  html += renderMiniCalendar();
-  html += renderTimerCard('coach');
   el.innerHTML = html;
 }
 
@@ -1236,13 +1295,28 @@ function renderTimerCard(role) {
 
   const stopBtn = role === 'coach' ? `<button class="btn btn-neutral" style="width:100%;margin-top:8px" onclick="stopInactivityTimer()">⏹ Остановить таймер</button>` : '';
 
+  // Progress bar for timer
+  let barPct, barColor, barLabel;
+  if (hoursElapsed < 48) {
+    barPct = Math.min(100, (hoursElapsed / 48) * 100);
+    barColor = barPct < 60 ? 'var(--green)' : barPct < 85 ? 'var(--yellow)' : 'var(--orange)';
+    barLabel = nextChargeIn;
+  } else {
+    const lastCharge2 = t.lastChargedAt ? new Date(t.lastChargedAt) : new Date(startedAt.getTime() + 48*3600000);
+    const elapsed12 = (now - lastCharge2) / 3600000;
+    barPct = Math.min(100, (elapsed12 / 12) * 100);
+    barColor = barPct < 60 ? 'var(--green)' : barPct < 85 ? 'var(--yellow)' : 'var(--orange)';
+    barLabel = nextChargeIn;
+  }
+
   return `<div class="timer-card active" id="timer-card">
     <div class="timer-status"><div class="timer-title">⏱ Таймер бездействия</div><span class="badge badge-wait">Активен</span></div>
     <div class="timer-amount">${base}₽ / базовый штраф</div>
-    <div class="timer-info">
-      Запущен: ${startedAt.toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}<br>
-      ${nextChargeIn}
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" style="width:${barPct.toFixed(1)}%;background:${barColor}"></div></div>
+      <div class="progress-time">${barLabel}</div>
     </div>
+    <div class="timer-info">Запущен: ${startedAt.toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
     ${stopBtn}
   </div>`;
 }
@@ -1251,7 +1325,9 @@ async function startInactivityTimer() {
   const amount = parseInt(document.getElementById('timer-amount').value);
   if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
   S.inactivityTimer = { baseAmount: amount, startedAt: new Date().toISOString(), lastChargedAt: null, active: true };
+  S.tutorialDone = true;
   await save(); closeModal('m-timer'); render(); toast('▶ Таймер запущен!');
+  document.getElementById('tut-overlay').classList.remove('active');
 }
 
 async function stopInactivityTimer() {
@@ -1353,6 +1429,40 @@ function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+
+// ── TUTORIAL ──
+function showTutorial() {
+  if (S.tutorialDone || S.role !== 'coach') return;
+  const btn = document.getElementById('start-timer-btn');
+  if (!btn) { setTimeout(showTutorial, 300); return; }
+
+  const rect = btn.getBoundingClientRect();
+  const pad = 6;
+
+  const hl = document.getElementById('tut-hl');
+  hl.style.top = (rect.top - pad) + 'px';
+  hl.style.left = (rect.left - pad) + 'px';
+  hl.style.width = (rect.width + pad * 2) + 'px';
+  hl.style.height = (rect.height + pad * 2) + 'px';
+
+  const arrow = document.getElementById('tut-arrow');
+  arrow.style.top = (rect.top - pad - 12) + 'px';
+  arrow.style.left = (rect.left + rect.width / 2 - 8) + 'px';
+
+  const bubble = document.getElementById('tut-bubble');
+  const bubbleTop = rect.top - pad - 12 - 160;
+  bubble.style.top = (bubbleTop > 40 ? bubbleTop : rect.bottom + pad + 12) + 'px';
+  bubble.style.left = Math.max(10, Math.min(rect.left, window.innerWidth - 256)) + 'px';
+
+  document.getElementById('tut-overlay').classList.add('active');
+}
+
+async function skipTutorial() {
+  document.getElementById('tut-overlay').classList.remove('active');
+  S.tutorialDone = true;
+  await save();
 }
 
 init();
