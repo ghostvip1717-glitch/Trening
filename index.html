@@ -454,8 +454,7 @@ let S = {
   pins: {}, roles: [], role: null,
   debt: 0, tasks: [], payments: [], history: [],
   debtProposal: null, // {from, newDebt, comment, createdAt}
-  inactivityTimer: null, // {baseAmount, startedAt, lastChargedAt, active}
-  tutorialDone: false
+  inactivityTimer: null // {baseAmount, startedAt, lastChargedAt, active}
 };
 
 let photoBase64 = null;
@@ -496,7 +495,6 @@ function mergeState(loaded) {
     if (Array.isArray(loaded.history)) merged.history = loaded.history;
     if (loaded.debtProposal !== undefined) merged.debtProposal = loaded.debtProposal;
     if (loaded.inactivityTimer !== undefined) merged.inactivityTimer = loaded.inactivityTimer;
-    if (loaded.tutorialDone !== undefined) merged.tutorialDone = loaded.tutorialDone;
   }
   return merged;
 }
@@ -849,7 +847,7 @@ function renderInbox() {
   html += renderMiniCalendar();
   html += renderTimerCard('coach');
   el.innerHTML = html;
-  if (!S.tutorialDone && S.role === 'coach') setTimeout(showTutorial, 150);
+  if (!timerEverStarted() && S.role === 'coach') setTimeout(showTutorial, 150);
 }
 
 function coachNewTaskCard(t) {
@@ -1325,9 +1323,8 @@ async function startInactivityTimer() {
   const amount = parseInt(document.getElementById('timer-amount').value);
   if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
   S.inactivityTimer = { baseAmount: amount, startedAt: new Date().toISOString(), lastChargedAt: null, active: true };
-  S.tutorialDone = true;
   await save(); closeModal('m-timer'); render(); toast('▶ Таймер запущен!');
-  document.getElementById('tut-overlay').classList.remove('active');
+
 }
 
 async function stopInactivityTimer() {
@@ -1433,9 +1430,13 @@ function toast(msg) {
 
 
 // ── TUTORIAL ──
+function timerEverStarted() {
+  return S.inactivityTimer !== null;
+}
+
 function showTutorial() {
-  console.log('showTutorial called, tutorialDone:', S.tutorialDone, 'role:', S.role);
-  if (S.tutorialDone || S.role !== 'coach') return;
+  console.log('showTutorial called, timerEverStarted:', timerEverStarted(), 'role:', S.role);
+  if (timerEverStarted() || S.role !== 'coach') return;
   const btn = document.getElementById('start-timer-btn');
   console.log('start-timer-btn found:', !!btn);
   if (!btn) { setTimeout(showTutorial, 300); return; }
@@ -1461,10 +1462,8 @@ function showTutorial() {
   document.getElementById('tut-overlay').classList.add('active');
 }
 
-async function skipTutorial() {
-  document.getElementById('tut-overlay').classList.remove('active');
-  S.tutorialDone = true;
-  await save();
+function skipTutorial() {
+
 }
 
 init();
