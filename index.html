@@ -489,6 +489,24 @@ function notifyAll(text) {
   }
 }
 
+// Ученик уведомляет тренера вручную (с защитой от спама — раз в 60 сек)
+let lastPokeAt = 0;
+function pokeCoach() {
+  const now = Date.now();
+  const wait = Math.ceil((60000 - (now - lastPokeAt)) / 1000);
+  if (wait > 0) { toast('⏳ Подожди ' + wait + ' сек перед повторным уведомлением'); return; }
+  if (!S.chatIds?.coach) { toast('⚠️ Тренер ещё не заходил в приложение'); return; }
+  lastPokeAt = now;
+  const active = S.tasks.filter(t => ['pending','reported','overdue'].includes(t.status));
+  let msg = '🔔 ' + roleName('student') + ' просит зайти в приложение!';
+  if (active.length) {
+    const names = active.map(t => '• ' + t.name).join('\n');
+    msg += '\n\nОжидают внимания:\n' + names;
+  }
+  notify(S.chatIds.coach, msg);
+  toast('✅ Тренер уведомлён!');
+}
+
 // Имя участника из Telegram-профиля, с ролью в скобках
 function roleName(role) {
   const base = role === 'student' ? 'Ученик' : 'Тренер';
@@ -760,6 +778,9 @@ function renderTasks() {
   const el = document.getElementById('tab-tasks');
   const active = S.tasks.filter(t => ['pending','active','reported','overdue'].includes(t.status));
   let html = '<div class="section-title">Мои задачи</div>';
+
+  // Кнопка «Уведомить тренера»
+  html += `<button class="btn btn-primary" style="margin-bottom:12px" onclick="pokeCoach()">🔔 Уведомить тренера</button>`;
 
   // Debt proposal for student
   if (S.debtProposal && S.debtProposal.from === 'coach') {
