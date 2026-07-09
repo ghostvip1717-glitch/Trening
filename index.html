@@ -455,7 +455,8 @@ let S = {
   debt: 0, tasks: [], payments: [], history: [],
   debtProposal: null, // {from, newDebt, comment, createdAt}
   inactivityTimer: null, // {baseAmount, startedAt, lastChargedAt, active}
-  chatIds: {} // {student: telegramId, coach: telegramId}
+  chatIds: {}, // {student: telegramId, coach: telegramId}
+  names: {} // {student: 'Имя', coach: 'Имя'} из Telegram-профиля
 };
 
 let photoBase64 = null;
@@ -488,6 +489,13 @@ function notifyAll(text) {
   }
 }
 
+// Имя участника из Telegram-профиля, с ролью в скобках
+function roleName(role) {
+  const base = role === 'student' ? 'Ученик' : 'Тренер';
+  const nm = S.names?.[role];
+  return nm ? nm + ' (' + base.toLowerCase() + ')' : base;
+}
+
 // Подсказка: активных задач нет — можно запустить таймер бездействия
 function maybeSuggestTimer() {
   const hasActive = S.tasks.some(t => ['pending','active','reported','overdue'].includes(t.status));
@@ -514,7 +522,7 @@ function mergeState(loaded) {
   const defaults = {
     pins: {}, roles: [], role: null,
     debt: 0, tasks: [], payments: [], history: [],
-    debtProposal: null, inactivityTimer: null, chatIds: {}
+    debtProposal: null, inactivityTimer: null, chatIds: {}, names: {}
   };
   const merged = { ...defaults };
   if (loaded && typeof loaded === 'object') {
@@ -528,6 +536,7 @@ function mergeState(loaded) {
     if (loaded.debtProposal !== undefined) merged.debtProposal = loaded.debtProposal;
     if (loaded.inactivityTimer !== undefined) merged.inactivityTimer = loaded.inactivityTimer;
     if (loaded.chatIds && typeof loaded.chatIds === 'object') merged.chatIds = loaded.chatIds;
+    if (loaded.names && typeof loaded.names === 'object') merged.names = loaded.names;
   }
   return merged;
 }
@@ -670,6 +679,8 @@ function launchApp() {
   if (uid) {
     if (!S.chatIds) S.chatIds = {};
     S.chatIds[r] = uid;
+    const nm = tg?.initDataUnsafe?.user?.first_name;
+    if (nm) { if (!S.names) S.names = {}; S.names[r] = nm; }
     save();
   }
   document.getElementById('role-pill').textContent = r === 'student' ? 'УЧЕНИК' : 'ТРЕНЕР';
@@ -999,8 +1010,8 @@ async function createTask() {
   await save(); closeModal('m-task'); render();
   document.getElementById('t-name').value = ''; document.getElementById('t-fine').value = '';
   const dlFormatted = new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  notifyAll('📋 Создана новая задача:\n' + name + '\nШтраф: ' + fine + '₽\nДедлайн: ' + dlFormatted + '\n⏳ Нужно подтверждение тренера!');
-  if (timerStopped) notifyAll('⏹ Таймер бездействия остановлен — ученик создал задачу.');
+  notifyAll('📋 ' + roleName('student') + ' создал(а) задачу:\n' + name + '\nШтраф: ' + fine + '₽\nДедлайн: ' + dlFormatted + '\n⏳ Нужно подтверждение тренера!');
+  if (timerStopped) notifyAll('⏹ Таймер бездействия остановлен — ' + roleName('student') + ' создал(а) задачу.');
 }
 
 async function confirmTask(id) {
@@ -1008,7 +1019,7 @@ async function confirmTask(id) {
   if (!t) return;
   t.status = 'active'; t.confirmedAt = new Date().toISOString();
   await save(); render(); toast('✅ Задача подтверждена!');
-  notifyAll('✅ Тренер подтвердил задачу: ' + t.name + '\n▶ Задача запущена, ученик может приступать!');
+  notifyAll('✅ ' + roleName('coach') + ' подтвердил(а) задачу: ' + t.name + '\n▶ Задача запущена, ученик может приступать!');
 }
 
 function openReport(id) {
@@ -1049,7 +1060,7 @@ async function submitReport() {
   if (!t) return;
   t.status = 'reported'; t.photo = photoBase64; t.reportedAt = new Date().toISOString();
   await save(); closeModal('m-report'); render(); toast('📸 Фото отправлено тренеру!');
-  notifyAll('📸 Ученик отправил фото-отчёт: ' + t.name + '\n⏳ Тренеру нужно проверить отчёт в приложении!');
+  notifyAll('📸 ' + roleName('student') + ' отправил(а) фото-отчёт: ' + t.name + '\n⏳ Тренеру нужно проверить отчёт в приложении!');
   photoBase64 = null;
 }
 
@@ -1060,13 +1071,13 @@ async function reviewTask(id, ok) {
   if (ok) {
     t.status = 'done';
     toast('✅ Отчёт принят!');
-    notifyAll('✅ Тренер принял отчёт: ' + t.name + '\nЗадача выполнена!');
+    notifyAll('✅ ' + roleName('coach') + ' принял(а) отчёт: ' + t.name + '\nЗадача выполнена!');
   } else {
     t.status = 'failed';
     S.debt += t.fine;
     S.history.push({ type: 'earned', name: t.name, amount: t.fine, date: new Date().toISOString() });
     toast(`Штраф ${t.fine}₽ начислен`);
-    notifyAll('❌ Тренер отклонил отчёт: ' + t.name + '\nШтраф ' + t.fine + '₽ начислен. Долг ученика: ' + S.debt + '₽');
+    notifyAll('❌ ' + roleName('coach') + ' отклонил(а) отчёт: ' + t.name + '\nШтраф ' + t.fine + '₽ начислен. Долг ученика: ' + S.debt + '₽');
   }
   await save(); render();
   maybeSuggestTimer();
@@ -1079,7 +1090,7 @@ async function confirmOverdue(id) {
   S.debt += t.fine;
   S.history.push({ type: 'earned', name: t.name + ' (просрочено)', amount: t.fine, date: new Date().toISOString() });
   await save(); render(); toast(`Просрочка подтверждена. Штраф ${t.fine}₽`);
-  notifyAll('⚠️ Тренер зафиксировал просрочку: ' + t.name + '\nШтраф ' + t.fine + '₽ добавлен к долгу. Долг ученика: ' + S.debt + '₽');
+  notifyAll('⚠️ ' + roleName('coach') + ' зафиксировал(а) просрочку: ' + t.name + '\nШтраф ' + t.fine + '₽ добавлен к долгу. Долг ученика: ' + S.debt + '₽');
   maybeSuggestTimer();
 }
 
@@ -1100,8 +1111,7 @@ async function proposeDebtChange() {
   if (isNaN(newDebt) || newDebt < 0) { toast('⚠️ Укажи сумму'); return; }
   S.debtProposal = { from, newDebt, comment, createdAt: new Date().toISOString() };
   await save(); closeModal('m-debt'); render(); toast('📨 Запрос отправлен!');
-  const who = from === 'coach' ? 'Тренер' : 'Ученик';
-  notifyAll('💰 ' + who + ' предлагает изменить долг на ' + newDebt + '₽' + (comment ? '\nКомментарий: ' + comment : '') + '\n⏳ Нужно подтверждение второй стороны!');
+  notifyAll('💰 ' + roleName(from) + ' предлагает изменить долг на ' + newDebt + '₽' + (comment ? '\nКомментарий: ' + comment : '') + '\n⏳ Нужно подтверждение второй стороны!');
 }
 
 async function confirmDebt(ok) {
@@ -1350,13 +1360,13 @@ async function startInactivityTimer() {
   if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
   S.inactivityTimer = { baseAmount: amount, startedAt: new Date().toISOString(), lastChargedAt: null, active: true };
   await save(); closeModal('m-timer'); render(); toast('▶ Таймер запущен!');
-  notifyAll('⏱ Тренер запустил таймер бездействия!\nБазовый штраф: ' + amount + '₽\nЕсли ученик не создаст задачу за 48 часов — штраф начислится автоматически, далее +10% каждые 12 часов.');
+  notifyAll('⏱ ' + roleName('coach') + ' запустил(а) таймер бездействия!\nБазовый штраф: ' + amount + '₽\nЕсли ученик не создаст задачу за 48 часов — штраф начислится автоматически, далее +10% каждые 12 часов.');
 }
 
 async function stopInactivityTimer() {
   S.inactivityTimer = { ...S.inactivityTimer, active: false };
   await save(); render(); toast('⏹ Таймер остановлен');
-  notifyAll('⏹ Тренер остановил таймер бездействия.');
+  notifyAll('⏹ ' + roleName('coach') + ' остановил(а) таймер бездействия.');
 }
 
 function checkInactivityTimer() {
