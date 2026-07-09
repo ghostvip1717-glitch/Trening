@@ -5,19 +5,29 @@
  * и отправляет сообщение в Telegram с кнопкой «🚀 Открыть приложение»,
  * которая сразу открывает мини-приложение.
  *
- * КАК ОБНОВИТЬ WORKER:
+ * ─────────────────────────────────────────────────────────────
+ * КАК ОБНОВИТЬ WORKER (по шагам):
  * 1. Открой https://dash.cloudflare.com → Workers & Pages → trening-notify
- * 2. Нажми «Edit code» и замени весь код на этот файл
- * 3. Токен бота: либо в Settings → Variables добавь переменную BOT_TOKEN,
- *    либо впиши токен прямо в строку ниже вместо env.BOT_TOKEN
- *    (токен выдаёт @BotFather)
- * 4. Нажми «Deploy»
+ * 2. Нажми «Edit code» (Редактировать код)
+ * 3. Выдели весь старый код (Ctrl+A) и вставь вместо него этот файл
+ * 4. Найди строку BOT_TOKEN ниже и вставь туда токен своего бота.
+ *    Токен берётся у @BotFather: напиши ему /mybots → выбери бота →
+ *    API Token. Выглядит примерно так: 123456789:AAE-xxxxxxxxxxxxxxxxx
+ * 5. Нажми «Deploy» (Развернуть) справа сверху
+ *
+ * ⚠️ Токен вставляй ТОЛЬКО здесь, в редакторе Cloudflare.
+ *    НЕ вставляй его в файл на GitHub — там он станет виден всем.
+ * ─────────────────────────────────────────────────────────────
  */
 
-const APP_URL = 'https://ghostvip1717-glitch.github.io/Trening/';
+// ⬇️ ВСТАВЬ СЮДА ТОКЕН БОТА (в редакторе Cloudflare, не на GitHub!)
+const BOT_TOKEN = 'PASTE_YOUR_BOT_TOKEN_HERE';
+
+// Ссылка на приложение для кнопки. startapp открывает мини-приложение прямо в Telegram.
+const APP_LINK = 'https://t.me/Abc7417bot?startapp';
 
 export default {
-  async fetch(request, env) {
+  async fetch(request) {
     const cors = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -36,7 +46,7 @@ export default {
       return new Response('chatId and message required', { status: 400, headers: cors });
     }
 
-    const resp = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendMessage', {
+    const resp = await fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -44,7 +54,7 @@ export default {
         text: message,
         reply_markup: {
           inline_keyboard: [[
-            { text: '🚀 Открыть приложение', web_app: { url: APP_URL } }
+            { text: '🚀 Открыть приложение', url: APP_LINK }
           ]]
         }
       })
