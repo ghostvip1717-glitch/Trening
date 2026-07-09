@@ -478,6 +478,24 @@ async function notify(chatId, text) {
   } catch(e) {}
 }
 
+// Отправить уведомление всем участникам (ученику и тренеру), каждому чату один раз
+function notifyAll(text) {
+  const sent = new Set();
+  for (const id of Object.values(S.chatIds || {})) {
+    if (!id || sent.has(String(id))) continue;
+    sent.add(String(id));
+    notify(id, text);
+  }
+}
+
+// Подсказка: активных задач нет — можно запустить таймер бездействия
+function maybeSuggestTimer() {
+  const hasActive = S.tasks.some(t => ['pending','active','reported','overdue'].includes(t.status));
+  if (!hasActive && S.tasks.length > 0 && !S.inactivityTimer?.active) {
+    notifyAll('💡 Активных задач не осталось. Тренер может запустить таймер бездействия!');
+  }
+}
+
 async function save() {
   // Always save to localStorage immediately
   try { localStorage.setItem('acc-backup', JSON.stringify(S)); } catch(e) {}
@@ -970,8 +988,10 @@ async function createTask() {
   if (!name || !dl || !fine || fine <= 0) { toast('⚠️ Заполни все поля'); return; }
   S.tasks.push({ id: Date.now().toString(), name, deadline: dl, fine, status: 'pending', photo: null, createdAt: new Date().toISOString() });
   // Stop inactivity timer when student creates a task
+  let timerStopped = false;
   if (S.inactivityTimer && S.inactivityTimer.active) {
     S.inactivityTimer.active = false;
+    timerStopped = true;
     toast('✅ Задача создана! Таймер бездействия остановлен.');
   } else {
     toast('✅ Задача создана!');
@@ -979,7 +999,8 @@ async function createTask() {
   await save(); closeModal('m-task'); render();
   document.getElementById('t-name').value = ''; document.getElementById('t-fine').value = '';
   const dlFormatted = new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  notify(S.chatIds?.coach, '📋 Новая задача от ученика:\n' + name + '\nШтраф: ' + fine + '₽\nДедлайн: ' + dlFormatted);
+  notifyAll('📋 Создана новая задача:\n' + name + '\nШтраф: ' + fine + '₽\nДедлайн: ' + dlFormatted + '\n⏳ Нужно подтверждение тренера!');
+  if (timerStopped) notifyAll('⏹ Таймер бездействия остановлен — ученик создал задачу.');
 }
 
 async function confirmTask(id) {
@@ -987,7 +1008,7 @@ async function confirmTask(id) {
   if (!t) return;
   t.status = 'active'; t.confirmedAt = new Date().toISOString();
   await save(); render(); toast('✅ Задача подтверждена!');
-  notify(S.chatIds?.student, '✅ Тренер подтвердил задачу: ' + t.name + '\nМожешь приступать!');
+  notifyAll('✅ Тренер подтвердил задачу: ' + t.name + '\n▶ Задача запущена, ученик может приступать!');
 }
 
 function openReport(id) {
@@ -1028,7 +1049,7 @@ async function submitReport() {
   if (!t) return;
   t.status = 'reported'; t.photo = photoBase64; t.reportedAt = new Date().toISOString();
   await save(); closeModal('m-report'); render(); toast('📸 Фото отправлено тренеру!');
-  notify(S.chatIds?.coach, '📸 Ученик отправил фото-отчёт: ' + t.name + '\nПроверь в приложении!');
+  notifyAll('📸 Ученик отправил фото-отчёт: ' + t.name + '\n⏳ Тренеру нужно проверить отчёт в приложении!');
   photoBase64 = null;
 }
 
@@ -1039,15 +1060,16 @@ async function reviewTask(id, ok) {
   if (ok) {
     t.status = 'done';
     toast('✅ Отчёт принят!');
-    notify(S.chatIds?.student, '✅ Тренер принял отчёт: ' + t.name + '\nЗадача выполнена!');
+    notifyAll('✅ Тренер принял отчёт: ' + t.name + '\nЗадача выполнена!');
   } else {
     t.status = 'failed';
     S.debt += t.fine;
     S.history.push({ type: 'earned', name: t.name, amount: t.fine, date: new Date().toISOString() });
     toast(`Штраф ${t.fine}₽ начислен`);
-    notify(S.chatIds?.student, '❌ Тренер отклонил отчёт: ' + t.name + '\nШтраф ' + t.fine + '₽ начислен. Попробуй снова!');
+    notifyAll('❌ Тренер отклонил отчёт: ' + t.name + '\nШтраф ' + t.fine + '₽ начислен. Долг ученика: ' + S.debt + '₽');
   }
   await save(); render();
+  maybeSuggestTimer();
 }
 
 async function confirmOverdue(id) {
@@ -1057,7 +1079,8 @@ async function confirmOverdue(id) {
   S.debt += t.fine;
   S.history.push({ type: 'earned', name: t.name + ' (просрочено)', amount: t.fine, date: new Date().toISOString() });
   await save(); render(); toast(`Просрочка подтверждена. Штраф ${t.fine}₽`);
-  notify(S.chatIds?.student, '⚠️ Тренер зафиксировал просрочку: ' + t.name + '\nШтраф ' + t.fine + '₽ добавлен к долгу.');
+  notifyAll('⚠️ Тренер зафиксировал просрочку: ' + t.name + '\nШтраф ' + t.fine + '₽ добавлен к долгу. Долг ученика: ' + S.debt + '₽');
+  maybeSuggestTimer();
 }
 
 // DEBT CHANGE
@@ -1077,6 +1100,8 @@ async function proposeDebtChange() {
   if (isNaN(newDebt) || newDebt < 0) { toast('⚠️ Укажи сумму'); return; }
   S.debtProposal = { from, newDebt, comment, createdAt: new Date().toISOString() };
   await save(); closeModal('m-debt'); render(); toast('📨 Запрос отправлен!');
+  const who = from === 'coach' ? 'Тренер' : 'Ученик';
+  notifyAll('💰 ' + who + ' предлагает изменить долг на ' + newDebt + '₽' + (comment ? '\nКомментарий: ' + comment : '') + '\n⏳ Нужно подтверждение второй стороны!');
 }
 
 async function confirmDebt(ok) {
@@ -1092,48 +1117,13 @@ async function confirmDebt(ok) {
       date: new Date().toISOString()
     });
     toast(`✅ Долг изменён на ${S.debtProposal.newDebt}₽`);
+    notifyAll('✅ Изменение долга подтверждено. Новый долг: ' + S.debtProposal.newDebt + '₽');
   } else {
     toast('Запрос отклонён');
+    notifyAll('❌ Запрос на изменение долга отклонён. Долг остался: ' + S.debt + '₽');
   }
   S.debtProposal = null;
   await save(); render();
-}
-
-// DEADLINES
-function checkDeadlinesSync() {
-  const now = new Date();
-  S.tasks.forEach(t => {
-    if (t.status === 'active' && new Date(t.deadline) < now) {
-      t.status = 'overdue'; t.overdueAt = t.overdueAt || now.toISOString();
-    }
-    if (t.status === 'overdue' && t.overdueAt) {
-      const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000);
-      if (now > expiry) t.status = 'burned';
-    }
-    if (t.status === 'pending' && new Date(t.deadline) < now) {
-      t.status = 'burned';
-    }
-  });
-}
-
-function checkDeadlines() {
-  checkInactivityTimer();
-  const now = new Date(); let changed = false;
-  S.tasks.forEach(t => {
-    if (t.status === 'active' && new Date(t.deadline) < now) {
-      t.status = 'overdue'; t.overdueAt = now.toISOString(); changed = true;
-      notify(S.chatIds?.coach, '⚠️ Задача просрочена: ' + t.name + '\nОткрой приложение чтобы подтвердить просрочку.');
-    }
-    if (t.status === 'overdue' && t.overdueAt) {
-      const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000);
-      if (now > expiry) { t.status = 'burned'; changed = true; }
-    }
-    if (t.status === 'pending' && new Date(t.deadline) < now) {
-      t.status = 'burned'; changed = true;
-    }
-  });
-  if (changed) { save(); render(); }
-  setTimeout(checkDeadlines, 60000);
 }
 
 function showScreen(name) {
@@ -1360,12 +1350,13 @@ async function startInactivityTimer() {
   if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
   S.inactivityTimer = { baseAmount: amount, startedAt: new Date().toISOString(), lastChargedAt: null, active: true };
   await save(); closeModal('m-timer'); render(); toast('▶ Таймер запущен!');
-  notify(S.chatIds?.student, '⏱ Тренер запустил таймер бездействия.\nБазовый штраф: ' + amount + '₽\nЕсли не создашь задачу в течение 48 часов — штраф начислится автоматически!');
+  notifyAll('⏱ Тренер запустил таймер бездействия!\nБазовый штраф: ' + amount + '₽\nЕсли ученик не создаст задачу за 48 часов — штраф начислится автоматически, далее +10% каждые 12 часов.');
 }
 
 async function stopInactivityTimer() {
   S.inactivityTimer = { ...S.inactivityTimer, active: false };
   await save(); render(); toast('⏹ Таймер остановлен');
+  notifyAll('⏹ Тренер остановил таймер бездействия.');
 }
 
 function checkInactivityTimer() {
@@ -1385,6 +1376,7 @@ function checkInactivityTimer() {
     S.history.push({ type: 'fine', name: 'Штраф за бездействие (48ч)', amount: t.baseAmount, date: now.toISOString() });
     S.inactivityTimer.lastChargedAt = now.toISOString();
     save(); render();
+    notifyAll('⏱ Штраф за бездействие: ученик не создал задачу за 48 часов.\n+' + t.baseAmount + '₽ к долгу. Долг ученика: ' + S.debt + '₽');
     return;
   }
 
@@ -1395,6 +1387,7 @@ function checkInactivityTimer() {
     S.history.push({ type: 'fine', name: 'Штраф за бездействие (+10%)', amount: charge, date: now.toISOString() });
     S.inactivityTimer.lastChargedAt = now.toISOString();
     save(); render();
+    notifyAll('⏱ Штраф за бездействие (+10%): ещё 12 часов без задач.\n+' + charge + '₽ к долгу. Долг ученика: ' + S.debt + '₽');
   }
 }
 
@@ -1405,37 +1398,40 @@ function checkInactivityTimer() {
 
 // ── DEADLINES ──
 function checkDeadlinesSync() {
-  const now = new Date();
-  S.tasks.forEach(t => {
-    if (t.status === 'active' && new Date(t.deadline) < now) {
-      t.status = 'overdue'; t.overdueAt = t.overdueAt || now.toISOString();
-    }
-    if (t.status === 'overdue' && t.overdueAt) {
-      const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000);
-      if (now > expiry) t.status = 'burned';
-    }
-    if (t.status === 'pending' && new Date(t.deadline) < now) {
-      t.status = 'burned';
-    }
-  });
-}
-
-function checkDeadlines() {
-  checkInactivityTimer();
   const now = new Date(); let changed = false;
   S.tasks.forEach(t => {
     if (t.status === 'active' && new Date(t.deadline) < now) {
       t.status = 'overdue'; t.overdueAt = t.overdueAt || now.toISOString(); changed = true;
+      if (!t.overdueNotified) {
+        t.overdueNotified = true;
+        notifyAll('⚠️ Задача просрочена: ' + t.name + '\nУ тренера есть 12 часов, чтобы подтвердить просрочку и начислить штраф ' + t.fine + '₽!');
+      }
     }
     if (t.status === 'overdue' && t.overdueAt) {
       const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000);
-      if (now > expiry) { t.status = 'burned'; changed = true; }
+      if (now > expiry) {
+        t.status = 'burned'; changed = true;
+        if (!t.burnedNotified) {
+          t.burnedNotified = true;
+          notifyAll('🔥 Задача сгорела без штрафа: ' + t.name + '\nТренер не подтвердил просрочку за 12 часов.');
+        }
+      }
     }
     if (t.status === 'pending' && new Date(t.deadline) < now) {
       t.status = 'burned'; changed = true;
+      if (!t.burnedNotified) {
+        t.burnedNotified = true;
+        notifyAll('🔥 Задача сгорела: ' + t.name + '\nТренер не подтвердил её до дедлайна.');
+      }
     }
   });
-  if (changed) { save(); render(); }
+  if (changed) { save(); maybeSuggestTimer(); }
+  return changed;
+}
+
+function checkDeadlines() {
+  checkInactivityTimer();
+  if (checkDeadlinesSync()) render();
   setTimeout(checkDeadlines, 60000);
 }
 
