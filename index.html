@@ -468,6 +468,10 @@ const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
 // NOTIFICATIONS
 const NOTIFY_URL = 'https://trening-notify.ghostvip1717.workers.dev';
+const BOT_USERNAME = 'Abc7417bot'; // @username бота из BotFather (без @)
+const APP_URL = 'https://ghostvip1717-glitch.github.io/Trening/';
+// Ссылка, открывающая мини-приложение прямо в Telegram (или веб-версию, если username не задан)
+function appLink() { return BOT_USERNAME ? 'https://t.me/' + BOT_USERNAME + '?startapp' : APP_URL; }
 async function notify(chatId, text) {
   if (!chatId) return;
   try {
@@ -489,22 +493,44 @@ function notifyAll(text) {
   }
 }
 
-// Ученик уведомляет тренера вручную (с защитой от спама — раз в 60 сек)
-let lastPokeAt = 0;
-function pokeCoach() {
-  const now = Date.now();
-  const wait = Math.ceil((60000 - (now - lastPokeAt)) / 1000);
-  if (wait > 0) { toast('⏳ Подожди ' + wait + ' сек перед повторным уведомлением'); return; }
-  if (!S.chatIds?.coach) { toast('⚠️ Тренер ещё не заходил в приложение'); return; }
-  lastPokeAt = now;
+// Текст личного сообщения тренеру (от лица ученика)
+function pokeMessage() {
   const active = S.tasks.filter(t => ['pending','reported','overdue'].includes(t.status));
-  let msg = '🔔 ' + roleName('student') + ' просит зайти в приложение!';
+  let msg = 'Привет! Загляни, пожалуйста, в приложение 🙏';
   if (active.length) {
-    const names = active.map(t => '• ' + t.name).join('\n');
-    msg += '\n\nОжидают внимания:\n' + names;
+    msg += '\n\nМеня ждут задачи:\n' + active.map(t => '• ' + t.name).join('\n');
   }
-  notify(S.chatIds.coach, msg);
-  toast('✅ Тренер уведомлён!');
+  return msg;
+}
+
+// Ученик уведомляет тренера ЛИЧНЫМ сообщением в их диалоге (нативный шэринг Telegram).
+// Сообщение отправляется от самого ученика, а не от бота.
+function pokeCoach() {
+  const link = appLink();
+  const text = pokeMessage();
+  // Нативный экран «Поделиться»: ученик выбирает чат тренера, сообщение уходит от него
+  if (tg && typeof tg.openTelegramLink === 'function') {
+    const share = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text);
+    tg.openTelegramLink(share);
+    // Дублируем пуш от бота на случай, если ученик передумает отправлять вручную
+    if (S.chatIds?.coach) notify(S.chatIds.coach, '🔔 ' + roleName('student') + ' зовёт в приложение!\n\n' + text);
+    return;
+  }
+  // Веб-версия (вне Telegram): копируем текст со ссылкой в буфер обмена
+  copyToClipboard(text + '\n\n' + link);
+  toast('📋 Текст скопирован — вставь его в чат тренеру');
+}
+
+function copyToClipboard(str) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(str); return; }
+  } catch(e) {}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = str; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  } catch(e) {}
 }
 
 // Имя участника из Telegram-профиля, с ролью в скобках
@@ -780,7 +806,7 @@ function renderTasks() {
   let html = '<div class="section-title">Мои задачи</div>';
 
   // Кнопка «Уведомить тренера»
-  html += `<button class="btn btn-primary" style="margin-bottom:12px" onclick="pokeCoach()">🔔 Уведомить тренера</button>`;
+  html += `<button class="btn btn-primary" style="margin-bottom:12px" onclick="pokeCoach()">🔔 Написать тренеру</button>`;
 
   // Debt proposal for student
   if (S.debtProposal && S.debtProposal.from === 'coach') {
