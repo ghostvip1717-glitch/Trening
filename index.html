@@ -92,6 +92,39 @@ body {
 .card-fine { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
 .card-deadline { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 
+/* Coach time callouts — deadline & report time must stand out */
+.time-callout {
+  display: flex; flex-direction: column; gap: 2px;
+  background: rgba(255,211,42,0.1);
+  border: 1.5px solid rgba(255,211,42,0.45);
+  border-left: 4px solid var(--yellow);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0 10px;
+}
+.time-callout.overdue {
+  background: rgba(255,159,67,0.12);
+  border-color: rgba(255,159,67,0.5);
+  border-left-color: var(--orange);
+}
+.time-callout.report {
+  background: rgba(108,92,231,0.12);
+  border-color: rgba(108,92,231,0.4);
+  border-left-color: var(--accent);
+}
+.time-callout-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+}
+.time-callout.overdue .time-callout-label { color: var(--orange); }
+.time-callout.report .time-callout-label { color: var(--accent); }
+.time-callout-value {
+  font-family: var(--display); font-size: 15px; font-weight: 700;
+  color: var(--yellow); line-height: 1.25;
+}
+.time-callout.overdue .time-callout-value { color: var(--orange); }
+.time-callout.report .time-callout-value { color: var(--text); }
+
 /* PROGRESS BAR */
 .progress-wrap { margin: 8px 0 4px; }
 .progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
@@ -791,6 +824,22 @@ function deadlineStr(dl) {
   return new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 }
 
+// Для тренера: дедлайн и время отчёта — крупно и заметно
+function coachTimeMeta(t) {
+  const over = new Date(t.deadline) < new Date() && !['done','failed','burned'].includes(t.status);
+  let html = `<div class="time-callout${over ? ' overdue' : ''}">
+      <div class="time-callout-label">Дедлайн, который поставил ученик</div>
+      <div class="time-callout-value">⏰ ${deadlineStr(t.deadline)}</div>
+    </div>`;
+  if (t.reportedAt) {
+    html += `<div class="time-callout report">
+      <div class="time-callout-label">Ученик отправил ответ</div>
+      <div class="time-callout-value">📸 ${deadlineStr(t.reportedAt)}</div>
+    </div>`;
+  }
+  return html;
+}
+
 // RENDER
 function render() {
   checkDeadlinesSync();
@@ -834,11 +883,6 @@ function renderTasks() {
 }
 
 function taskCard(t, role) {
-  const now = new Date();
-  const dl = new Date(t.deadline);
-  const over = dl < now;
-  const dlStr = deadlineStr(t.deadline);
-
   const badges = {
     pending: '<span class="badge badge-wait">⏳ Ждёт подтверждения тренера</span>',
     active: '<span class="badge badge-active">● Активна</span>',
@@ -883,9 +927,13 @@ function taskCard(t, role) {
     photoHtml = `<img src="${t.photo}" class="report-photo">`;
   }
 
+  const timeBlock = role === 'coach'
+    ? coachTimeMeta(t)
+    : `<div class="card-deadline">⏰ ${deadlineStr(t.deadline)}</div>`;
+
   return `<div class="card">
     <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    <div class="card-deadline">⏰ ${dlStr}</div>
+    ${timeBlock}
     ${photoHtml}${timer}${badges[t.status]||''}${actions}
   </div>`;
 }
@@ -957,7 +1005,7 @@ function renderInbox() {
 function coachNewTaskCard(t) {
   return `<div class="card">
     <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    <div class="card-deadline">⏰ ${deadlineStr(t.deadline)}</div>
+    ${coachTimeMeta(t)}
     <span class="badge badge-wait">Ждёт подтверждения</span>
     <div class="card-actions">
       <button class="btn btn-green" onclick="confirmTask('${t.id}')">✓ Видел, подтверждаю</button>
@@ -968,6 +1016,7 @@ function coachNewTaskCard(t) {
 function coachReportCard(t) {
   return `<div class="card">
     <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
+    ${coachTimeMeta(t)}
     ${t.photo ? `<img src="${t.photo}" class="report-photo">` : ''}
     <span class="badge badge-reported">📸 Фото получено</span>
     <div class="card-actions">
@@ -981,7 +1030,7 @@ function coachOverdueCard(t) {
   const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000).toISOString();
   return `<div class="card">
     <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    <div class="card-deadline">⏰ ${deadlineStr(t.deadline)}</div>
+    ${coachTimeMeta(t)}
     ${timerHTML(t.overdueAt, expiry, 'Осталось на подтверждение')}
     <div class="card-actions">
       <button class="btn btn-orange" onclick="confirmOverdue('${t.id}')">👁 Видел просрочку → штраф</button>
@@ -1030,7 +1079,7 @@ function renderAll() {
     html += S.tasks.slice().reverse().map(t => `
       <div class="card">
         <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-        <div class="card-deadline">⏰ ${deadlineStr(t.deadline)}</div>
+        ${coachTimeMeta(t)}
         ${badgesAll[t.status]||''}
       </div>`).join('');
   }
@@ -1107,7 +1156,10 @@ async function submitReport() {
   if (!t) return;
   t.status = 'reported'; t.photo = photoBase64; t.reportedAt = new Date().toISOString();
   await save(); closeModal('m-report'); render(); toast('📸 Фото отправлено тренеру!');
-  notifyAll('📸 ' + roleName('student') + ' отправил(а) фото-отчёт: ' + t.name + '\n⏳ Тренеру нужно проверить отчёт в приложении!');
+  notifyAll('📸 ' + roleName('student') + ' отправил(а) фото-отчёт: ' + t.name +
+    '\nОтправлено: ' + deadlineStr(t.reportedAt) +
+    '\nДедлайн: ' + deadlineStr(t.deadline) +
+    '\n⏳ Тренеру нужно проверить отчёт в приложении!');
   photoBase64 = null;
 }
 
