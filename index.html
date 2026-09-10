@@ -163,10 +163,11 @@ body {
 .quota-count { font-family: var(--display); font-size: 15px; font-weight: 700; }
 .quota-card.ok .quota-count { color: var(--green); }
 .quota-card.warn .quota-count { color: var(--orange); }
-.quota-bar { height: 6px; border-radius: 6px; background: var(--surface2); overflow: hidden; margin-bottom: 8px; }
-.quota-fill { height: 100%; border-radius: 6px; transition: width 0.3s; }
-.quota-card.ok .quota-fill { background: var(--green); }
-.quota-card.warn .quota-fill { background: var(--orange); }
+.quota-squares { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 8px; }
+.quota-sq { aspect-ratio: 1; border-radius: 6px; background: var(--surface2); display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--display); font-size: 12px; font-weight: 700; color: var(--muted); position: relative; }
+.quota-sq.done { background: rgba(0,214,143,0.18); color: var(--green); }
+.quota-sq.today { border: 1.5px solid var(--accent); }
+.quota-sq-dow { font-family: var(--body); font-size: 8px; font-weight: 600; opacity: 0.7; text-transform: uppercase; margin-top: 1px; }
 .quota-hint { font-size: 11px; color: var(--muted); }
 
 /* BUTTONS */
@@ -981,21 +982,45 @@ function pluralTask(n) {
   return 'задач';
 }
 
+// Разбивка выполненных задач по дням за последние 7 суток (старые → сегодня)
+function weeklyDoneByDay() {
+  const dow = ['вс','пн','вт','ср','чт','пт','сб'];
+  const days = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 24 * 3600000);
+    days.push({ date: d, count: 0, isToday: i === 0, dow: dow[d.getDay()], num: d.getDate() });
+  }
+  S.tasks.forEach(t => {
+    if (t.status !== 'done') return;
+    const when = t.doneAt || t.reportedAt || t.confirmedAt || t.createdAt;
+    if (!when) return;
+    const w = new Date(when); w.setHours(0,0,0,0);
+    const bucket = days.find(x => x.date.getTime() === w.getTime());
+    if (bucket) bucket.count++;
+  });
+  return days;
+}
+
 // Плашка нормы «не меньше 4 задач за 7 дней» (общая для ученика и тренера)
 function renderQuotaCard() {
   const done = weeklyDoneCount();
   const ok = done >= WEEKLY_QUOTA;
   const need = Math.max(0, WEEKLY_QUOTA - done);
-  const pct = Math.min(100, Math.round(done / WEEKLY_QUOTA * 100));
   const hint = ok
     ? '✅ Норма за 7 дней выполнена'
     : `⚠ Нужно ещё ${need} ${pluralTask(need)} до нормы`;
+  const squares = weeklyDoneByDay().map(d =>
+    `<div class="quota-sq${d.count ? ' done' : ''}${d.isToday ? ' today' : ''}">
+      <span>${d.count || ''}</span>
+      <span class="quota-sq-dow">${d.dow}</span>
+    </div>`).join('');
   return `<div class="card quota-card ${ok ? 'ok' : 'warn'}">
     <div class="quota-top">
       <span class="quota-label">Норма за 7 дней</span>
       <span class="quota-count">${done} / ${WEEKLY_QUOTA}</span>
     </div>
-    <div class="quota-bar"><div class="quota-fill" style="width:${pct}%"></div></div>
+    <div class="quota-squares">${squares}</div>
     <div class="quota-hint">${hint}</div>
   </div>`;
 }
