@@ -155,6 +155,20 @@ body {
 .inbox-head .card-name { flex: 1; }
 .inbox-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--display); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 
+.quota-card { margin-bottom: 12px; }
+.quota-card.ok { border-color: rgba(0,214,143,0.4); }
+.quota-card.warn { border-color: rgba(255,159,67,0.5); }
+.quota-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.quota-label { font-size: 12px; font-weight: 600; }
+.quota-count { font-family: var(--display); font-size: 15px; font-weight: 700; }
+.quota-card.ok .quota-count { color: var(--green); }
+.quota-card.warn .quota-count { color: var(--orange); }
+.quota-bar { height: 6px; border-radius: 6px; background: var(--surface2); overflow: hidden; margin-bottom: 8px; }
+.quota-fill { height: 100%; border-radius: 6px; transition: width 0.3s; }
+.quota-card.ok .quota-fill { background: var(--green); }
+.quota-card.warn .quota-fill { background: var(--orange); }
+.quota-hint { font-size: 11px; color: var(--muted); }
+
 /* BUTTONS */
 .btn { border: none; border-radius: 12px; padding: 10px 14px; font-family: var(--body); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.12s; display: flex; align-items: center; justify-content: center; gap: 5px; }
 .btn:active { transform: scale(0.96); }
@@ -863,6 +877,8 @@ function renderTasks() {
   // Кнопка «Уведомить тренера»
   html += `<button class="btn btn-primary" style="margin-bottom:12px" onclick="pokeCoach()">🔔 Написать тренеру</button>`;
 
+  html += renderQuotaCard();
+
   // Debt proposal for student
   if (S.debtProposal && S.debtProposal.from === 'coach') {
     html += `<div class="card" style="border-color:var(--yellow)">
@@ -946,6 +962,44 @@ function taskCard(t, role) {
 
 function studentTaskCard(t) { return taskCard(t, 'student'); }
 
+// Норма активности: не меньше WEEKLY_QUOTA выполненных задач за 7 дней
+const WEEKLY_QUOTA = 4;
+
+function weeklyDoneCount() {
+  const since = Date.now() - 7 * 24 * 3600000;
+  return S.tasks.filter(t => {
+    if (t.status !== 'done') return false;
+    const when = t.doneAt || t.reportedAt || t.confirmedAt || t.createdAt;
+    return when && new Date(when).getTime() >= since;
+  }).length;
+}
+
+function pluralTask(n) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 'задача';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'задачи';
+  return 'задач';
+}
+
+// Плашка нормы «не меньше 4 задач за 7 дней» (общая для ученика и тренера)
+function renderQuotaCard() {
+  const done = weeklyDoneCount();
+  const ok = done >= WEEKLY_QUOTA;
+  const need = Math.max(0, WEEKLY_QUOTA - done);
+  const pct = Math.min(100, Math.round(done / WEEKLY_QUOTA * 100));
+  const hint = ok
+    ? '✅ Норма за 7 дней выполнена'
+    : `⚠ Нужно ещё ${need} ${pluralTask(need)} до нормы`;
+  return `<div class="card quota-card ${ok ? 'ok' : 'warn'}">
+    <div class="quota-top">
+      <span class="quota-label">Норма за 7 дней</span>
+      <span class="quota-count">${done} / ${WEEKLY_QUOTA}</span>
+    </div>
+    <div class="quota-bar"><div class="quota-fill" style="width:${pct}%"></div></div>
+    <div class="quota-hint">${hint}</div>
+  </div>`;
+}
+
 // Одна пронумерованная строка входящих тренера (внутри общего бокса)
 function coachInboxItem(t, n) {
   const badges = {
@@ -1017,6 +1071,8 @@ function renderStudentHistory() {
 function renderInbox() {
   const el = document.getElementById('tab-inbox');
   let html = '';
+
+  html += renderQuotaCard();
 
   // Debt proposal for coach
   if (S.debtProposal && S.debtProposal.from === 'student') {
@@ -1213,7 +1269,7 @@ async function reviewTask(id, ok) {
   if (!t) return;
   t.photo = null;
   if (ok) {
-    t.status = 'done';
+    t.status = 'done'; t.doneAt = new Date().toISOString();
     toast('✅ Отчёт принят!');
     notifyAll('✅ ' + roleName('coach') + ' принял(а) отчёт: ' + t.name + '\nЗадача выполнена!');
   } else {
