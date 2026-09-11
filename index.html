@@ -17,6 +17,7 @@
   --green: #00d68f;
   --yellow: #ffd32a;
   --orange: #ff9f43;
+  --red: #ff5e57;
   --text: #eeeef5;
   --muted: #55556a;
   --neutral: #a0a0c0;
@@ -149,11 +150,13 @@ body {
 
 .card-actions { display: flex; gap: 8px; margin-top: 10px; }
 
-.inbox-item { padding: 2px 0; }
-.inbox-item + .inbox-item { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 14px; }
-.inbox-head { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 6px; }
+.inbox-item { padding: 2px 0 2px 11px; border-left: 3px solid var(--border); }
+.inbox-item + .inbox-item { margin-top: 14px; padding-top: 14px; }
+.inbox-head { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 5px; }
 .inbox-head .card-name { flex: 1; }
 .inbox-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--display); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.inbox-type { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; margin-bottom: 7px; }
+.inbox-type-dot { width: 7px; height: 7px; border-radius: 50%; }
 
 .quota-card { margin-bottom: 12px; }
 .quota-card.ok { border-color: rgba(0,214,143,0.4); }
@@ -1025,13 +1028,16 @@ function renderQuotaCard() {
   </div>`;
 }
 
+// Тип входящей задачи для тренера: что именно нужно сделать + цвет
+const INBOX_TYPE = {
+  pending:  { color: 'var(--orange)', icon: '✋', label: 'Подтвердить задачу' },
+  reported: { color: 'var(--yellow)', icon: '📸', label: 'Проверить отчёт' },
+  overdue:  { color: 'var(--red)',    icon: '⚠',  label: 'Просрочка → штраф' },
+};
+
 // Одна пронумерованная строка входящих тренера (внутри общего бокса)
 function coachInboxItem(t, n) {
-  const badges = {
-    pending: '<span class="badge badge-wait">⏳ Ждёт подтверждения тренера</span>',
-    reported: '<span class="badge badge-reported">📸 Отчёт на проверке</span>',
-    overdue: '<span class="badge badge-wait">⚠ Просрочена</span>',
-  };
+  const meta = INBOX_TYPE[t.status] || { color: 'var(--accent)', icon: '•', label: t.status };
 
   let timer = '';
   if (t.status === 'overdue' && t.overdueAt) {
@@ -1053,13 +1059,14 @@ function coachInboxItem(t, n) {
 
   const photoHtml = (t.status === 'reported' && t.photo) ? `<img src="${t.photo}" class="report-photo">` : '';
 
-  return `<div class="inbox-item">
+  return `<div class="inbox-item" style="border-left-color:${meta.color}">
     <div class="inbox-head">
-      <span class="inbox-num">${n}</span>
+      <span class="inbox-num" style="background:${meta.color}">${n}</span>
       <span class="card-name">${t.name}</span>
       <span class="card-fine">${t.fine}₽</span>
     </div>
-    ${coachTimeMeta(t)}${photoHtml}${timer}${badges[t.status]||''}${actions}
+    <div class="inbox-type" style="color:${meta.color}"><span class="inbox-type-dot" style="background:${meta.color}"></span>${meta.icon} ${meta.label}</div>
+    ${coachTimeMeta(t)}${photoHtml}${timer}${actions}
   </div>`;
 }
 
