@@ -155,8 +155,9 @@ body {
 .inbox-head { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 5px; }
 .inbox-head .card-name { flex: 1; }
 .inbox-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--display); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-.inbox-type { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; margin-bottom: 7px; }
-.inbox-type-dot { width: 7px; height: 7px; border-radius: 50%; }
+.inbox-type-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.inbox-group-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 10px; }
+.inbox-group-head:not(:first-child) { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
 
 .quota-card { margin-bottom: 12px; }
 .quota-card.ok { border-color: rgba(0,214,143,0.4); }
@@ -1065,7 +1066,6 @@ function coachInboxItem(t, n) {
       <span class="card-name">${t.name}</span>
       <span class="card-fine">${t.fine}₽</span>
     </div>
-    <div class="inbox-type" style="color:${meta.color}"><span class="inbox-type-dot" style="background:${meta.color}"></span>${meta.icon} ${meta.label}</div>
     ${coachTimeMeta(t)}${photoHtml}${timer}${actions}
   </div>`;
 }
@@ -1122,7 +1122,20 @@ function renderInbox() {
   const inbox = S.tasks.filter(t => ['pending','reported','overdue'].includes(t.status));
   if (inbox.length) {
     html += `<div class="section-title">Входящие · ${inbox.length}</div>`;
-    html += '<div class="card">' + inbox.map((t, i) => coachInboxItem(t, i + 1)).join('') + '</div>';
+    const order = [
+      { status: 'overdue',  label: 'Просрочка → штраф' },
+      { status: 'reported', label: 'На проверке' },
+      { status: 'pending',  label: 'На подтверждение' },
+    ];
+    let box = '';
+    order.forEach(g => {
+      const items = inbox.filter(t => t.status === g.status);
+      if (!items.length) return;
+      const m = INBOX_TYPE[g.status];
+      box += `<div class="inbox-group-head" style="color:${m.color}"><span class="inbox-type-dot" style="background:${m.color}"></span>${m.icon} ${g.label} · ${items.length}</div>`;
+      box += items.map((t, i) => coachInboxItem(t, i + 1)).join('');
+    });
+    html += '<div class="card">' + box + '</div>';
   }
 
   if (!S.debtProposal && !inbox.length) {
