@@ -4,3 +4,10 @@
 - change: coach sees highlighted deadline (time-callout) + reportedAt time on cards/inbox/all; notify on report includes both timestamps
 - field reportedAt already set in submitReport; now shown in UI
 - 2026-07-14: PR #6 merged to main (b653785) — live Pages should pick up coach time callouts
+- 2026-09-23: branch claude/program-analysis-login-xlh7rc — два тренера
+  - JSONBin формат v2: { version:2, pins/chatIds/names: {student, coach1, coach2}, branches: {coach1, coach2} }; ветка = debt/tasks/payments/history/debtProposal/inactivityTimer
+  - старый формат автоматически мигрирует: coach → coach1
+  - S = вид активной ветки (S.role 'student'|'coach', S.chatIds/names.coach = тренер ветки); ME = аккаунт, BR = ветка
+  - PIN уникален, определяет аккаунт; «Я новый тренер — регистрация» на экране PIN, пока coach2 свободен
+  - ученик переключает тренера в шапке (#coach-switch), тренер видит только свою ветку, уведомления только участникам ветки
+  - save() мержит в свежий документ только изменённые ветки + свои данные входа; поллинг больше не сбрасывает роль
