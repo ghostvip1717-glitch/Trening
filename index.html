@@ -60,6 +60,7 @@ body {
 .pin-key:active { background: var(--surface2); transform: scale(0.94); border-color: var(--accent); }
 .pin-key.del { font-size: 14px; color: var(--muted); }
 .pin-key.empty { background: transparent; border-color: transparent; pointer-events: none; }
+.pin-alt { background: none; border: none; color: var(--accent); font-size: 13px; font-weight: 600; margin-top: 20px; cursor: pointer; display: none; }
 .pin-error { color: var(--orange); font-size: 12px; margin-top: -20px; margin-bottom: 16px; height: 16px; text-align: center; }
 
 /* APP */
@@ -67,6 +68,10 @@ body {
 .app-top { padding: 12px 18px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .app-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .app-wordmark { font-family: var(--display); font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; }
+.coach-switch { display: none; gap: 6px; margin-bottom: 10px; }
+.coach-switch button { flex: 1; background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; padding: 7px 8px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.coach-switch button.active { border-color: var(--accent); color: var(--accent); }
+.ob-login { background: none; border: none; color: var(--accent); font-size: 13px; font-weight: 600; margin-top: 8px; cursor: pointer; display: none; }
 .role-pill { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
 .pill-student { background: var(--accent); color: #fff; }
 .pill-coach { background: var(--green); color: #000; }
@@ -358,15 +363,16 @@ body {
   <div class="ob-flame">🔥</div>
   <div class="ob-title">Accountability</div>
   <p class="ob-sub">Система ответственности.<br>Выбери роль при первом входе.</p>
-  <button class="role-btn" onclick="startRegister('student')">
+  <button class="role-btn" id="ob-student" onclick="startRegister('student')">
     <div class="role-icon">🎯</div>
     <div><div class="role-text-name">Я ученик</div><div class="role-text-desc">Ставлю задачи, отправляю фото-отчёты</div></div>
   </button>
-  <button class="role-btn" onclick="startRegister('coach')">
+  <button class="role-btn" id="ob-coach" onclick="startRegister('coach')">
     <div class="role-icon">🏆</div>
     <div><div class="role-text-name">Я тренер</div><div class="role-text-desc">Подтверждаю задачи, проверяю отчёты</div></div>
   </button>
   <div class="ob-waiting" id="ob-waiting"></div>
+  <button class="ob-login" id="ob-login" onclick="showLoginPin()">У меня уже есть PIN — войти</button>
 </div>
 
 <!-- PIN -->
@@ -392,6 +398,7 @@ body {
     <div class="pin-key" onclick="pinInput('0')">0</div>
     <div class="pin-key del" onclick="pinDel()">⌫</div>
   </div>
+  <button class="pin-alt" id="pin-alt" onclick="pinAlt()"></button>
 </div>
 
 <!-- APP -->
@@ -401,6 +408,7 @@ body {
       <div class="app-wordmark">ACCOUNTABILITY</div>
       <div class="role-pill" id="role-pill"></div>
     </div>
+    <div class="coach-switch" id="coach-switch"></div>
     <div class="debt-display">
       <div class="debt-label" id="debt-label">Долг</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:10px">
@@ -505,14 +513,13 @@ body {
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
-let S = {
-  pins: {}, roles: [], role: null,
-  debt: 0, tasks: [], payments: [], history: [],
-  debtProposal: null, // {from, newDebt, comment, createdAt}
-  inactivityTimer: null, // {baseAmount, startedAt, lastChargedAt, active}
-  chatIds: {}, // {student: telegramId, coach: telegramId}
-  names: {} // {student: 'Имя', coach: 'Имя'} из Telegram-профиля
-};
+// Аккаунты: student, coach1, coach2. У каждого тренера своя ветка данных с учеником,
+// другой тренер её не видит. S — рабочий вид активной ветки (S.tasks, S.debt, S.role...).
+const COACHES = ['coach1', 'coach2'];
+let DB = emptyDB();  // весь документ JSONBin
+let ME = null;       // вошедший аккаунт: 'student' | 'coach1' | 'coach2'
+let BR = 'coach1';   // активная ветка (id тренера)
+let S = buildView();
 
 let photoBase64 = null;
 
@@ -603,96 +610,156 @@ function maybeSuggestTimer() {
   }
 }
 
-async function save() {
-  // Always save to localStorage immediately
-  try { localStorage.setItem('acc-backup', JSON.stringify(S)); } catch(e) {}
-  // Try JSONBin in background
-  try {
-    fetch(BIN_URL, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
-      body: JSON.stringify(S)
-    }).catch(() => {});
-  } catch(e) {}
+function emptyBranch() {
+  return { debt: 0, tasks: [], payments: [], history: [], debtProposal: null, inactivityTimer: null };
 }
 
-function mergeState(loaded) {
-  // Safely merge loaded data with defaults - ignore unknown fields, fill missing ones
-  const defaults = {
-    pins: {}, roles: [], role: null,
-    debt: 0, tasks: [], payments: [], history: [],
-    debtProposal: null, inactivityTimer: null, chatIds: {}, names: {}
-  };
-  const merged = { ...defaults };
-  if (loaded && typeof loaded === 'object') {
-    if (loaded.pins && typeof loaded.pins === 'object') merged.pins = loaded.pins;
-    if (Array.isArray(loaded.roles)) merged.roles = loaded.roles;
-    merged.role = null; // Always reset role - require PIN
-    if (typeof loaded.debt === 'number') merged.debt = loaded.debt;
-    if (Array.isArray(loaded.tasks)) merged.tasks = loaded.tasks;
-    if (Array.isArray(loaded.payments)) merged.payments = loaded.payments;
-    if (Array.isArray(loaded.history)) merged.history = loaded.history;
-    if (loaded.debtProposal !== undefined) merged.debtProposal = loaded.debtProposal;
-    if (loaded.inactivityTimer !== undefined) merged.inactivityTimer = loaded.inactivityTimer;
-    if (loaded.chatIds && typeof loaded.chatIds === 'object') merged.chatIds = loaded.chatIds;
-    if (loaded.names && typeof loaded.names === 'object') merged.names = loaded.names;
+function emptyDB() {
+  return { version: 2, pins: {}, chatIds: {}, names: {}, branches: { coach1: emptyBranch(), coach2: emptyBranch() } };
+}
+
+function asObj(v) { return v && typeof v === 'object' ? v : {}; }
+
+function normBranch(b) {
+  const r = emptyBranch();
+  if (!b || typeof b !== 'object') return r;
+  if (typeof b.debt === 'number') r.debt = b.debt;
+  ['tasks', 'payments', 'history'].forEach(k => { if (Array.isArray(b[k])) r[k] = b[k]; });
+  if (b.debtProposal !== undefined) r.debtProposal = b.debtProposal;
+  if (b.inactivityTimer !== undefined) r.inactivityTimer = b.inactivityTimer;
+  return r;
+}
+
+// Привести данные к формату v2. Старый формат (один тренер) переезжает в ветку coach1.
+function normalizeDB(raw) {
+  const db = emptyDB();
+  if (!raw || typeof raw !== 'object') return db;
+  if (raw.branches) {
+    db.pins = asObj(raw.pins); db.chatIds = asObj(raw.chatIds); db.names = asObj(raw.names);
+    COACHES.forEach(c => { db.branches[c] = normBranch(raw.branches[c]); });
+    return db;
   }
-  return merged;
+  const move = (src, dst) => {
+    src = asObj(src);
+    if (src.student) dst.student = src.student;
+    if (src.coach) dst.coach1 = src.coach;
+  };
+  move(raw.pins, db.pins); move(raw.chatIds, db.chatIds); move(raw.names, db.names);
+  db.branches.coach1 = normBranch(raw);
+  return db;
+}
+
+function isRegistered(acc) { return !!DB.pins[acc]; }
+function registeredCoaches() { return COACHES.filter(isRegistered); }
+function coachLabel(c) { return DB.names[c] || (c === 'coach1' ? 'Тренер 1' : 'Тренер 2'); }
+
+// Вид ветки: ученик и тренер этой ветки видны остальному коду как 'student' / 'coach'
+function buildView() {
+  const b = DB.branches[BR];
+  return {
+    role: ME ? (ME === 'student' ? 'student' : 'coach') : null,
+    debt: b.debt, tasks: b.tasks, payments: b.payments, history: b.history,
+    debtProposal: b.debtProposal, inactivityTimer: b.inactivityTimer,
+    chatIds: { student: DB.chatIds.student, coach: DB.chatIds[BR] },
+    names: { student: DB.names.student, coach: DB.names[BR] }
+  };
+}
+
+// Перенести изменения из вида обратно в ветку
+function writeBack() { DB.branches[BR] = normBranch(S); }
+
+const dirty = new Set();   // ветки, изменённые с последней записи
+let identityDirty = false; // PIN / chatId / имя текущего аккаунта
+let saving = null;
+
+function save() {
+  if (ME) { writeBack(); dirty.add(BR); }
+  kickFlush();
+}
+
+function saveIdentity() { identityDirty = true; kickFlush(); }
+
+function kickFlush() {
+  try { localStorage.setItem('acc-backup', JSON.stringify(DB)); } catch(e) {}
+  if (!saving) saving = flush().finally(() => { saving = null; });
+}
+
+// Читаем свежий документ и подменяем в нём только свои ветки и свои данные входа,
+// чтобы не затирать изменения других участников
+async function flush() {
+  while (dirty.size || identityDirty) {
+    const branches = [...dirty]; dirty.clear();
+    const ident = identityDirty; identityDirty = false;
+    let out = DB;
+    try {
+      const r = await fetch(BIN_URL + '/latest', { headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' } });
+      if (r.ok) {
+        const data = await r.json();
+        out = normalizeDB(data?.record || data);
+        branches.forEach(b => { out.branches[b] = DB.branches[b]; });
+        if (ident && ME) ['pins', 'chatIds', 'names'].forEach(k => {
+          if (DB[k][ME] !== undefined) out[k][ME] = DB[k][ME];
+        });
+      }
+    } catch(e) {}
+    try {
+      await fetch(BIN_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+        body: JSON.stringify(out)
+      });
+    } catch(e) {}
+  }
+}
+
+function applyLoaded(record) {
+  DB = normalizeDB(record);
+  S = buildView();
 }
 
 async function load() {
-  console.log('--- load() called ---');
-  console.log('BIN_URL:', BIN_URL);
-  // Try JSONBin first with short timeout
   try {
-    console.log('Fetching JSONBin...');
     const controller = new AbortController();
-    const timer = setTimeout(() => { console.log('JSONBin TIMEOUT after 4s'); controller.abort(); }, 4000);
+    const timer = setTimeout(() => controller.abort(), 4000);
     const r = await fetch(BIN_URL + '/latest', {
       headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' },
       signal: controller.signal
     });
     clearTimeout(timer);
-    console.log('JSONBin response status:', r.status, r.ok);
     if (r.ok) {
       const data = await r.json();
-      console.log('JSONBin data keys:', Object.keys(data));
-      const record = data?.record || (data?.pins !== undefined ? data : null);
-      console.log('record found:', !!record);
-      if (record) {
-        S = mergeState(record);
-        localStorage.setItem('acc-backup', JSON.stringify(S));
-        console.log('Loaded from JSONBin OK, roles:', S.roles);
+      const record = data?.record || data;
+      if (record && typeof record === 'object') {
+        applyLoaded(record);
+        try { localStorage.setItem('acc-backup', JSON.stringify(DB)); } catch(e) {}
         return true;
       }
     }
-  } catch(e) { console.log('JSONBin ERROR:', e.message, e.name); }
+  } catch(e) { console.log('JSONBin ERROR:', e.message); }
 
-  // Fallback to localStorage
-  console.log('Trying localStorage fallback...');
   try {
     const backup = localStorage.getItem('acc-backup');
-    console.log('localStorage backup exists:', !!backup);
-    if (backup) {
-      S = mergeState(JSON.parse(backup));
-      console.log('Loaded from localStorage OK, roles:', S.roles);
-      return true;
-    }
+    if (backup) { applyLoaded(JSON.parse(backup)); return true; }
   } catch(e) { console.log('localStorage ERROR:', e); }
-  
-  console.log('No data found anywhere, starting fresh');
   return false;
 }
 
 // PIN
-let pinMode = '', pinBuf = '', pinConfirm = '', pinStep = 1;
+let pinMode = '', pinBuf = '', pinConfirm = '', pinStep = 1, regAcc = null;
 
-function startRegister(role) {
-  pinMode = 'register-' + role; pinStep = 1; pinBuf = ''; pinConfirm = '';
+function setLoading(on) { document.getElementById('loading').style.display = on ? 'flex' : 'none'; }
+
+async function startRegister(role) {
+  // Свежие данные: свободный слот тренера мог только что занять другой
+  setLoading(true); await load(); setLoading(false);
+  const acc = role === 'student' ? 'student' : COACHES.find(c => !isRegistered(c));
+  if (!acc || isRegistered(acc)) { toast('Эта роль уже занята'); route(); return; }
+  regAcc = acc;
+  pinMode = 'register'; pinStep = 1; pinBuf = ''; pinConfirm = '';
   document.getElementById('pin-title').textContent = role === 'student' ? '🎯 Придумай PIN-код' : '🏆 Придумай PIN-код';
   document.getElementById('pin-sub').textContent = '4 цифры — твой ключ входа';
   document.getElementById('pin-error').textContent = '';
-  updateDots(); showScreen('pin');
+  updatePinAlt(); updateDots(); showScreen('pin');
 }
 
 function showLoginPin() {
@@ -700,7 +767,21 @@ function showLoginPin() {
   document.getElementById('pin-title').textContent = 'Добро пожаловать 👋';
   document.getElementById('pin-sub').textContent = 'Введи свой PIN-код для входа';
   document.getElementById('pin-error').textContent = '';
-  updateDots(); showScreen('pin');
+  updatePinAlt(); updateDots(); showScreen('pin');
+}
+
+// Ссылка под клавиатурой: регистрация второго тренера или возврат назад
+function updatePinAlt() {
+  const el = document.getElementById('pin-alt');
+  if (pinMode === 'register') { el.textContent = '← Назад'; el.style.display = 'block'; return; }
+  const free = COACHES.some(c => !isRegistered(c));
+  el.textContent = 'Я новый тренер — регистрация';
+  el.style.display = free ? 'block' : 'none';
+}
+
+function pinAlt() {
+  if (pinMode === 'register') route();
+  else startRegister('coach');
 }
 
 function pinInput(d) {
@@ -716,26 +797,28 @@ function updateDots() {
     document.getElementById('d' + i).className = 'pin-dot' + (i < pinBuf.length ? ' filled' : '');
 }
 
-async function handlePin() {
+function handlePin() {
+  const err = document.getElementById('pin-error');
   if (pinMode === 'login') {
-    let found = null;
-    for (const [role, pin] of Object.entries(S.pins)) { if (pin === pinBuf) { found = role; break; } }
-    if (found) { S.role = found; await save(); launchApp(); }
-    else { document.getElementById('pin-error').textContent = 'Неверный PIN-код, попробуй снова'; pinBuf = ''; updateDots(); }
+    const found = Object.keys(DB.pins).find(a => DB.pins[a] === pinBuf);
+    if (found) enterAs(found);
+    else { err.textContent = 'Неверный PIN-код, попробуй снова'; pinBuf = ''; updateDots(); }
     return;
   }
-  const role = pinMode.replace('register-', '');
   if (pinStep === 1) {
-    pinConfirm = pinBuf; pinBuf = ''; pinStep = 2;
+    // PIN определяет аккаунт при входе, поэтому он должен быть уникальным
+    if (Object.keys(DB.pins).some(a => a !== regAcc && DB.pins[a] === pinBuf)) {
+      err.textContent = 'Этот PIN уже занят, придумай другой'; pinBuf = ''; updateDots(); return;
+    }
+    pinConfirm = pinBuf; pinBuf = ''; pinStep = 2; err.textContent = '';
     document.getElementById('pin-sub').textContent = 'Повтори PIN-код для подтверждения';
     updateDots();
   } else {
     if (pinBuf === pinConfirm) {
-      S.pins[role] = pinBuf;
-      if (!S.roles.includes(role)) S.roles.push(role);
-      S.role = role; await save(); launchApp();
+      DB.pins[regAcc] = pinBuf;
+      enterAs(regAcc);
     } else {
-      document.getElementById('pin-error').textContent = 'PIN-коды не совпадают, начни заново';
+      err.textContent = 'PIN-коды не совпадают, начни заново';
       pinBuf = ''; pinStep = 1;
       document.getElementById('pin-sub').textContent = '4 цифры — твой ключ входа';
       updateDots();
@@ -743,48 +826,85 @@ async function handlePin() {
   }
 }
 
+function enterAs(acc) {
+  ME = acc;
+  BR = acc === 'student' ? pickStudentBranch() : acc;
+  S = buildView();
+  launchApp();
+}
+
+// Ученик открывает ветку тренера, которую смотрел последней
+function pickStudentBranch() {
+  let last = null;
+  try { last = localStorage.getItem('acc-branch'); } catch(e) {}
+  const regs = registeredCoaches();
+  return regs.includes(last) ? last : (regs[0] || 'coach1');
+}
+
+function switchCoach(c) {
+  if (c === BR) return;
+  writeBack(); BR = c; S = buildView();
+  try { localStorage.setItem('acc-branch', c); } catch(e) {}
+  render(); toast('🏆 ' + coachLabel(c));
+}
+
+// Переключатель тренеров в шапке — только у ученика и только если тренеров двое
+function renderCoachSwitch() {
+  const el = document.getElementById('coach-switch');
+  const regs = registeredCoaches();
+  if (ME !== 'student' || regs.length < 2) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = '';
+  regs.forEach(c => {
+    const b = document.createElement('button');
+    b.textContent = '🏆 ' + coachLabel(c);
+    if (c === BR) b.className = 'active';
+    b.onclick = () => switchCoach(c);
+    el.appendChild(b);
+  });
+}
+
 // INIT
 async function init() {
-  document.getElementById('loading').style.display = 'flex';
-  const ok = await load();
-  document.getElementById('loading').style.display = 'none';
-  // Always reset role - require PIN on every session
-  S.role = null;
-  checkDeadlines();
-  if (!ok || S.roles.length === 0) { showOnboard(); return; }
-  if (S.roles.length >= 2) { showLoginPin(); return; }
-  showOnboard();
+  setLoading(true);
+  await load();
+  setLoading(false);
+  route();
+}
+
+// Все зарегистрированы или уже есть ученик и тренер — экран PIN, иначе выбор роли
+function route() {
+  if (isRegistered('student') && registeredCoaches().length) showLoginPin();
+  else showOnboard();
 }
 
 function showOnboard() {
+  const stu = isRegistered('student'), coaches = registeredCoaches().length;
   const w = document.getElementById('ob-waiting');
-  const btns = document.querySelectorAll('.role-btn');
-  btns.forEach(b => b.style.display = 'flex');
+  document.getElementById('ob-student').style.display = stu ? 'none' : 'flex';
+  document.getElementById('ob-coach').style.display = coaches >= COACHES.length ? 'none' : 'flex';
   w.style.display = 'none';
-  if (S.roles.includes('student') && !S.roles.includes('coach')) {
-    btns[0].style.display = 'none'; w.style.display = 'block';
-    w.textContent = '✅ Ученик зарегистрирован. Жди пока тренер войдёт.';
-  } else if (S.roles.includes('coach') && !S.roles.includes('student')) {
-    btns[1].style.display = 'none'; w.style.display = 'block';
-    w.textContent = '✅ Тренер зарегистрирован. Жди пока ученик войдёт.';
-  }
+  if (stu && !coaches) { w.style.display = 'block'; w.textContent = '✅ Ученик зарегистрирован. Жди пока тренер войдёт.'; }
+  else if (!stu && coaches) { w.style.display = 'block'; w.textContent = '✅ Тренер зарегистрирован. Жди пока ученик войдёт.'; }
+  document.getElementById('ob-login').style.display = Object.keys(DB.pins).length ? 'block' : 'none';
   showScreen('onboard');
 }
 
+let pollTimer = null, deadlinesStarted = false;
+
 function launchApp() {
   const r = S.role;
-  // Save Telegram chat_id for notifications
+  // Telegram chat_id и имя — для уведомлений
   const uid = tg?.initDataUnsafe?.user?.id;
   if (uid) {
-    if (!S.chatIds) S.chatIds = {};
-    S.chatIds[r] = uid;
+    DB.chatIds[ME] = uid;
     const nm = tg?.initDataUnsafe?.user?.first_name;
-    if (nm) { if (!S.names) S.names = {}; S.names[r] = nm; }
-    save();
+    if (nm) DB.names[ME] = nm;
+    S = buildView();
   }
+  saveIdentity();
   document.getElementById('role-pill').textContent = r === 'student' ? 'УЧЕНИК' : 'ТРЕНЕР';
   document.getElementById('role-pill').className = 'role-pill ' + (r === 'student' ? 'pill-student' : 'pill-coach');
-  document.getElementById('debt-label').textContent = r === 'student' ? 'Мой долг' : 'Долг ученика';
   document.getElementById('nav-student').style.display = r === 'student' ? 'flex' : 'none';
   document.getElementById('nav-coach').style.display = r === 'coach' ? 'flex' : 'none';
   document.getElementById('fab').style.display = r === 'student' ? 'flex' : 'none';
@@ -792,7 +912,12 @@ function launchApp() {
   const navId = r === 'student' ? 'nav-student' : 'nav-coach';
   switchTab(firstTab, navId, document.querySelector('#' + navId + ' .nav-btn'));
   showScreen('app'); render();
-  setInterval(async () => { await load(); render(); }, 30000);
+  // Не перечитываем данные, пока свои изменения ещё не записаны
+  if (!pollTimer) pollTimer = setInterval(async () => {
+    if (saving || dirty.size) return;
+    await load(); render();
+  }, 30000);
+  if (!deadlinesStarted) { deadlinesStarted = true; checkDeadlines(); }
   // Remind coach to start inactivity timer if no tasks and timer not running
   if (r === 'coach' && !S.inactivityTimer?.active) {
     const hasActiveTasks = S.tasks.some(t => ['pending','active','reported'].includes(t.status));
@@ -863,8 +988,16 @@ function coachTimeMeta(t) {
 }
 
 // RENDER
+let renderLock = false;
+
 function render() {
+  if (renderLock || !ME) return;
   checkDeadlinesSync();
+  renderCoachSwitch();
+  const two = registeredCoaches().length > 1;
+  document.getElementById('debt-label').textContent = S.role === 'student'
+    ? 'Мой долг' + (two ? ' · ' + coachLabel(BR) : '')
+    : 'Долг ученика';
   document.getElementById('debt-number').textContent = S.debt;
   if (S.role === 'student') { renderTasks(); renderStudentHistory(); }
   else { renderInbox(); renderAll(); }
@@ -1697,9 +1830,20 @@ function checkDeadlinesSync() {
   return changed;
 }
 
+// Ученик обслуживает ветки обоих тренеров, тренер — только свою
 function checkDeadlines() {
-  checkInactivityTimer();
-  if (checkDeadlinesSync()) render();
+  const own = BR;
+  const list = ME === 'student' ? registeredCoaches() : [own];
+  if (!list.includes(own)) list.push(own);
+  renderLock = true;
+  for (const b of list) {
+    if (b !== BR) { writeBack(); BR = b; S = buildView(); }
+    checkInactivityTimer();
+    checkDeadlinesSync();
+  }
+  if (BR !== own) { writeBack(); BR = own; S = buildView(); }
+  renderLock = false;
+  render();
   setTimeout(checkDeadlines, 60000);
 }
 
