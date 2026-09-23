@@ -1880,11 +1880,13 @@ function timerEverStarted() {
 
 function showTutorial() {
   console.log('showTutorial called, timerEverStarted:', timerEverStarted(), 'role:', S.role);
-  if (timerEverStarted() || S.role !== 'coach') return;
+  if (timerEverStarted() || S.role !== 'coach' || tutorialDismissed()) return;
   const btn = document.getElementById('start-timer-btn');
   console.log('start-timer-btn found:', !!btn);
   if (!btn) { setTimeout(showTutorial, 300); return; }
 
+  // Кнопка таймера может быть ниже экрана — прокручиваем к ней, иначе подсказка уедет за край
+  btn.scrollIntoView({ block: 'center' });
   const rect = btn.getBoundingClientRect();
   const pad = 6;
 
@@ -1894,20 +1896,36 @@ function showTutorial() {
   hl.style.width = (rect.width + pad * 2) + 'px';
   hl.style.height = (rect.height + pad * 2) + 'px';
 
-  const arrow = document.getElementById('tut-arrow');
-  arrow.style.top = (rect.top - pad - 12) + 'px';
-  arrow.style.left = (rect.left + rect.width / 2 - 8) + 'px';
+  document.getElementById('tut-overlay').classList.add('active');
 
+  // Подсказка над кнопкой, если помещается, иначе под ней; всегда в пределах экрана
   const bubble = document.getElementById('tut-bubble');
-  const bubbleTop = rect.top - pad - 12 - 160;
-  bubble.style.top = (bubbleTop > 40 ? bubbleTop : rect.bottom + pad + 12) + 'px';
+  const bh = bubble.offsetHeight;
+  const above = rect.top - pad - 12 - bh;
+  let top = above > 10 ? above : rect.bottom + pad + 12;
+  top = Math.max(10, Math.min(top, window.innerHeight - bh - 10));
+  bubble.style.top = top + 'px';
   bubble.style.left = Math.max(10, Math.min(rect.left, window.innerWidth - 256)) + 'px';
 
-  document.getElementById('tut-overlay').classList.add('active');
+  const arrow = document.getElementById('tut-arrow');
+  arrow.style.display = above > 10 ? 'none' : 'block';
+  arrow.style.top = (rect.bottom + pad + 2) + 'px';
+  arrow.style.left = (rect.left + rect.width / 2 - 8) + 'px';
 }
 
-function skipTutorial() {
+function tutorialKey() { return 'acc-tut-' + (ME || ''); }
 
+function tutorialDismissed() {
+  if (tutorialSkipped) return true;
+  try { return localStorage.getItem(tutorialKey()) === '1'; } catch(e) { return false; }
+}
+
+let tutorialSkipped = false;
+
+function skipTutorial() {
+  tutorialSkipped = true;
+  try { localStorage.setItem(tutorialKey(), '1'); } catch(e) {}
+  document.getElementById('tut-overlay').classList.remove('active');
 }
 
 init();
