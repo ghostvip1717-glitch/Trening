@@ -696,7 +696,7 @@ function kickFlush() {
 async function flush() {
   while (dirty.size || identityDirty) {
     const branches = [...dirty]; dirty.clear();
-    const ident = identityDirty; identityDirty = false;
+    identityDirty = false;
     let out = DB;
     try {
       const r = await fetch(BIN_URL + '/latest', { headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' } });
@@ -704,7 +704,8 @@ async function flush() {
         const data = await r.json();
         out = normalizeDB(data?.record || data);
         branches.forEach(b => { out.branches[b] = DB.branches[b]; });
-        if (ident && ME) ['pins', 'chatIds', 'names'].forEach(k => {
+        // Свои данные входа пишем всегда: их могла затереть параллельная запись другого участника
+        if (ME) ['pins', 'chatIds', 'names'].forEach(k => {
           if (DB[k][ME] !== undefined) out[k][ME] = DB[k][ME];
         });
       }
@@ -899,6 +900,17 @@ function showOnboard() {
 
 let pollTimer = null, deadlinesStarted = false;
 
+// Бот может писать только тем, кто разрешил ему сообщения (нажал Start или дал доступ из мини-приложения)
+function requestBotMessages() {
+  const user = tg?.initDataUnsafe?.user;
+  if (!user || user.allows_write_to_pm || typeof tg.requestWriteAccess !== 'function') return;
+  try {
+    tg.requestWriteAccess(ok => {
+      toast(ok ? '🔔 Уведомления от бота включены' : '🔕 Без разрешения бот не сможет присылать уведомления');
+    });
+  } catch(e) {}
+}
+
 function launchApp() {
   const r = S.role;
   // Telegram chat_id и имя — для уведомлений
@@ -910,6 +922,7 @@ function launchApp() {
     S = buildView();
   }
   saveIdentity();
+  requestBotMessages();
   document.getElementById('role-pill').textContent = r === 'student' ? 'УЧЕНИК' : 'ТРЕНЕР';
   document.getElementById('role-pill').className = 'role-pill ' + (r === 'student' ? 'pill-student' : 'pill-coach');
   document.getElementById('nav-student').style.display = r === 'student' ? 'flex' : 'none';
@@ -922,7 +935,11 @@ function launchApp() {
   // Не перечитываем данные, пока свои изменения ещё не записаны
   if (!pollTimer) pollTimer = setInterval(async () => {
     if (saving || dirty.size) return;
-    await load(); render();
+    await load();
+    // chat_id потерялся в общем документе — восстанавливаем
+    const uid = tg?.initDataUnsafe?.user?.id;
+    if (uid && String(DB.chatIds[ME]) !== String(uid)) { DB.chatIds[ME] = uid; S = buildView(); saveIdentity(); }
+    render();
   }, 30000);
   if (!deadlinesStarted) { deadlinesStarted = true; checkDeadlines(); }
   // Remind coach to start inactivity timer if no tasks and timer not running
