@@ -552,14 +552,9 @@ async function notify(chatId, text) {
   } catch(e) {}
 }
 
-// Отправить уведомление всем участникам (ученику и тренеру), каждому чату один раз
+// Уведомления от бота получает только ученик; тренерам бот не пишет
 function notifyAll(text) {
-  const sent = new Set();
-  for (const id of Object.values(S.chatIds || {})) {
-    if (!id || sent.has(String(id))) continue;
-    sent.add(String(id));
-    notify(id, text);
-  }
+  notify(S.chatIds?.student, text);
 }
 
 // Текст личного сообщения тренеру (от лица ученика)
@@ -581,8 +576,6 @@ function pokeCoach() {
   if (tg && typeof tg.openTelegramLink === 'function') {
     const share = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text);
     tg.openTelegramLink(share);
-    // Дублируем пуш от бота на случай, если ученик передумает отправлять вручную
-    if (S.chatIds?.coach) notify(S.chatIds.coach, '🔔 ' + roleName('student') + ' зовёт в приложение!\n\n' + text);
     return;
   }
   // Веб-версия (вне Telegram): копируем текст со ссылкой в буфер обмена
@@ -903,7 +896,7 @@ let pollTimer = null, deadlinesStarted = false;
 // Бот может писать только тем, кто разрешил ему сообщения (нажал Start или дал доступ из мини-приложения)
 function requestBotMessages() {
   const user = tg?.initDataUnsafe?.user;
-  if (!user || user.allows_write_to_pm || typeof tg.requestWriteAccess !== 'function') return;
+  if (ME !== 'student' || !user || user.allows_write_to_pm || typeof tg.requestWriteAccess !== 'function') return;
   try {
     tg.requestWriteAccess(ok => {
       toast(ok ? '🔔 Уведомления от бота включены' : '🔕 Без разрешения бот не сможет присылать уведомления');
