@@ -147,8 +147,6 @@ body {
 .badge-failed { background: rgba(160,160,192,0.12); color: var(--neutral); }
 .badge-burned { background: rgba(100,100,120,0.12); color: var(--muted); }
 .badge-pending { background: rgba(255,159,67,0.12); color: var(--orange); }
-.badge-confirmed { background: rgba(0,214,143,0.12); color: var(--green); }
-.badge-rejected { background: rgba(160,160,192,0.12); color: var(--neutral); }
 
 .card-actions { display: flex; gap: 8px; margin-top: 10px; }
 
@@ -181,7 +179,6 @@ body {
 .btn:active { transform: scale(0.96); }
 .btn-primary { background: var(--accent); color: #fff; width: 100%; padding: 15px; font-size: 14px; border-radius: 14px; }
 .btn-green { background: rgba(0,214,143,0.14); color: var(--green); flex: 1; }
-.btn-yellow { background: rgba(255,211,42,0.14); color: var(--yellow); flex: 1; }
 .btn-orange { background: rgba(255,159,67,0.14); color: var(--orange); flex: 1; }
 .btn-ghost { background: var(--surface2); color: var(--text); flex: 1; }
 .btn-neutral { background: rgba(160,160,192,0.12); color: var(--neutral); flex: 1; }
@@ -283,72 +280,6 @@ body {
 .timer-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
 .timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
 
-/* TUTORIAL */
-.tut-overlay { display: none; position: fixed; inset: 0; z-index: 800; pointer-events: all; }
-.tut-overlay.active { display: block; }
-.tut-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
-.tut-highlight {
-  position: absolute; border-radius: 12px;
-  box-shadow: 0 0 0 3px var(--accent), 0 0 0 6px rgba(59,130,246,0.3);
-  transition: all 0.3s; pointer-events: none; z-index: 802;
-}
-.tut-bubble {
-  position: absolute; background: var(--surface);
-  border: 1.5px solid var(--accent); border-radius: 14px;
-  padding: 14px 16px; z-index: 803; max-width: 240px;
-  pointer-events: all;
-}
-.tut-arrow {
-  position: absolute; width: 0; height: 0;
-  border-left: 8px solid transparent; border-right: 8px solid transparent;
-  border-bottom: 10px solid var(--accent);
-}
-.tut-bubble-title { font-family: var(--display); font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
-.tut-bubble-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
-.tut-next { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
-
-/* LOADING */
-.loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 500; flex-direction: column; gap: 12px; }
-.loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { font-size: 12px; color: var(--muted); }
-
-
-/* CALENDAR */
-.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.cal-month { font-family: var(--display); font-size: 13px; font-weight: 700; }
-.cal-nav { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--muted); cursor: pointer; font-size: 14px; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
-.cal-day-name { text-align: center; font-size: 10px; color: var(--muted); padding: 4px 0; font-weight: 600; }
-.cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; position: relative; cursor: default; background: var(--surface); }
-.cal-day.empty { background: transparent; }
-.cal-day.today { border: 1.5px solid var(--accent); color: var(--accent); }
-.cal-day.has-done { background: rgba(0,214,143,0.15); color: var(--green); }
-.cal-day.has-failed { background: rgba(160,160,192,0.1); color: var(--muted); }
-.cal-day.has-both { background: rgba(255,211,42,0.1); color: var(--yellow); }
-.cal-dot { width: 4px; height: 4px; border-radius: 50%; position: absolute; bottom: 3px; }
-.cal-legend { display: flex; gap: 16px; justify-content: center; margin-bottom: 16px; }
-.cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
-.cal-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-
-/* TIMER CARD */
-.timer-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
-.timer-card.active { border-color: var(--orange); }
-.timer-status { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.timer-title { font-family: var(--display); font-size: 12px; font-weight: 700; }
-.timer-amount { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--yellow); }
-.timer-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
-.timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
-
-/* TUTORIAL OVERLAY */
-.tutorial-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 800; }
-.tutorial-overlay.active { display: block; }
-.tutorial-highlight { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.82), 0 0 0 3px var(--accent); z-index: 801; transition: all 0.3s; pointer-events: none; }
-.tutorial-bubble { position: absolute; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 16px; padding: 14px 16px; z-index: 802; max-width: 260px; }
-.tutorial-bubble-title { font-family: var(--display); font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--accent); }
-.tutorial-bubble-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
-.tutorial-next { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 18px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
-.tutorial-arrow { position: absolute; width: 0; height: 0; }
 /* TOAST */
 .toast { position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; z-index: 300; white-space: nowrap; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -736,12 +667,12 @@ async function load() {
         return true;
       }
     }
-  } catch(e) { console.log('JSONBin ERROR:', e.message); }
+  } catch(e) { console.warn('JSONBin ERROR:', e.message); }
 
   try {
     const backup = localStorage.getItem('acc-backup');
     if (backup) { applyLoaded(JSON.parse(backup)); return true; }
-  } catch(e) { console.log('localStorage ERROR:', e); }
+  } catch(e) { console.warn('localStorage ERROR:', e); }
   return false;
 }
 
@@ -1131,8 +1062,6 @@ function taskCard(t, role) {
   </div>`;
 }
 
-function studentTaskCard(t) { return taskCard(t, 'student'); }
-
 // Норма активности: не меньше WEEKLY_QUOTA выполненных задач за 7 дней
 const WEEKLY_QUOTA = 4;
 
@@ -1312,42 +1241,6 @@ function renderInbox() {
   html += renderTimerCard('coach');
   el.innerHTML = html;
   if (!timerEverStarted() && S.role === 'coach') setTimeout(showTutorial, 150);
-}
-
-function coachNewTaskCard(t) {
-  return `<div class="card">
-    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    ${coachTimeMeta(t)}
-    <span class="badge badge-wait">Ждёт подтверждения</span>
-    <div class="card-actions">
-      <button class="btn btn-green" onclick="confirmTask('${t.id}')">✓ Видел, подтверждаю</button>
-    </div>
-  </div>`;
-}
-
-function coachReportCard(t) {
-  return `<div class="card">
-    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    ${coachTimeMeta(t)}
-    ${t.photo ? `<img src="${t.photo}" class="report-photo">` : ''}
-    <span class="badge badge-reported">📸 Фото получено</span>
-    <div class="card-actions">
-      <button class="btn btn-green" onclick="reviewTask('${t.id}',true)">✓ Принять</button>
-      <button class="btn btn-neutral" onclick="reviewTask('${t.id}',false)">✗ Отклонить</button>
-    </div>
-  </div>`;
-}
-
-function coachOverdueCard(t) {
-  const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000).toISOString();
-  return `<div class="card">
-    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    ${coachTimeMeta(t)}
-    ${timerHTML(t.overdueAt, expiry, 'Осталось на подтверждение')}
-    <div class="card-actions">
-      <button class="btn btn-orange" onclick="confirmOverdue('${t.id}')">👁 Видел просрочку → штраф</button>
-    </div>
-  </div>`;
 }
 
 // COACH ALL TASKS
@@ -1563,13 +1456,11 @@ async function confirmDebt(ok) {
 }
 
 function showScreen(name) {
-  console.log('showScreen:', name);
   const map = { onboard:'s-onboard', pin:'s-pin', app:'s-app' };
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(map[name]);
   if (!el) { console.error('Screen element not found:', map[name]); return; }
   el.classList.add('active');
-  console.log('Screen shown:', name);
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -1577,8 +1468,6 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.querySelectorAll('.modal-overlay').forEach(el =>
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
 );
-
-function hideTutorial() {}
 
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -1898,31 +1787,6 @@ function checkDeadlines() {
   setTimeout(checkDeadlines, 60000);
 }
 
-// ── UTILS ──
-function showScreen(name) {
-  console.log('showScreen:', name);
-  const map = { onboard:'s-onboard', pin:'s-pin', app:'s-app' };
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(map[name]);
-  if (!el) { console.error('Screen element not found:', map[name]); return; }
-  el.classList.add('active');
-  console.log('Screen shown:', name);
-}
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(el =>
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
-);
-
-function hideTutorial() {}
-
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2800);
-}
-
 
 // ── TUTORIAL ──
 function timerEverStarted() {
@@ -1930,10 +1794,8 @@ function timerEverStarted() {
 }
 
 function showTutorial() {
-  console.log('showTutorial called, timerEverStarted:', timerEverStarted(), 'role:', S.role);
   if (timerEverStarted() || S.role !== 'coach' || tutorialDismissed()) return;
   const btn = document.getElementById('start-timer-btn');
-  console.log('start-timer-btn found:', !!btn);
   if (!btn) { setTimeout(showTutorial, 300); return; }
 
   // Кнопка таймера может быть ниже экрана — прокручиваем к ней, иначе подсказка уедет за край
