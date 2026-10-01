@@ -21,6 +21,7 @@
   --text: #eeeef5;
   --muted: #55556a;
   --neutral: #a0a0c0;
+  --violet: #9a8cff;
   --display: 'Unbounded', sans-serif;
   --body: 'Inter', sans-serif;
 }
@@ -75,10 +76,11 @@ body {
 .role-pill { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
 .pill-student { background: var(--accent); color: #fff; }
 .pill-coach { background: var(--green); color: #000; }
-.debt-display { text-align: center; padding: 2px 0 4px; }
+.debt-display { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .debt-label { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2px; }
-.debt-number { font-family: var(--display); font-size: 26px; font-weight: 700; line-height: 1; color: var(--neutral); }
-.debt-rub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.debt-number { font-family: var(--display); font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+.debt-rub { font-family: var(--body); font-size: 13px; font-weight: 500; color: var(--neutral); margin-left: 4px; }
+.debt-edit { background: none; border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px; color: var(--neutral); font: 500 12px var(--body); cursor: pointer; }
 
 /* TABS */
 .tab-content { flex: 1; overflow-y: auto; padding: 14px 14px 84px; }
@@ -95,38 +97,13 @@ body {
 .card { background: var(--surface); border-radius: 12px; padding: 15px 16px; margin-bottom: 10px; }
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
 .card-name { font-size: 14px; font-weight: 600; flex: 1; margin-right: 8px; line-height: 1.3; }
-.card-fine { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
+.card-fine { font-size: 13px; font-weight: 500; color: var(--neutral); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .card-deadline { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 
-/* Coach time callouts — deadline & report time must stand out */
-.time-callout {
-  display: flex; flex-direction: column; gap: 2px;
-  background: rgba(255,211,42,0.1);
-  border-left: 3px solid var(--yellow);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin: 8px 0 10px;
-}
-.time-callout.overdue {
-  background: rgba(255,159,67,0.12);
-  border-left-color: var(--orange);
-}
-.time-callout.report {
-  background: rgba(59,130,246,0.12);
-  border-left-color: var(--accent);
-}
-.time-callout-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted);
-}
-.time-callout.overdue .time-callout-label { color: var(--orange); }
-.time-callout.report .time-callout-label { color: var(--accent); }
-.time-callout-value {
-  font-family: var(--display); font-size: 15px; font-weight: 700;
-  color: var(--yellow); line-height: 1.25;
-}
-.time-callout.overdue .time-callout-value { color: var(--orange); }
-.time-callout.report .time-callout-value { color: var(--text); }
+/* Coach time meta — one quiet line, key value highlighted */
+.time-meta { font-size: 12px; color: var(--neutral); margin: 2px 0 8px; font-variant-numeric: tabular-nums; }
+.time-meta b { color: var(--text); font-weight: 500; }
+.time-meta b.late { color: var(--red); }
 
 /* PROGRESS BAR */
 .progress-wrap { margin: 8px 0 4px; }
@@ -147,19 +124,33 @@ body {
 .badge-failed { background: rgba(160,160,192,0.12); color: var(--neutral); }
 .badge-burned { background: rgba(100,100,120,0.12); color: var(--muted); }
 .badge-pending { background: rgba(255,159,67,0.12); color: var(--orange); }
-.badge-confirmed { background: rgba(0,214,143,0.12); color: var(--green); }
-.badge-rejected { background: rgba(160,160,192,0.12); color: var(--neutral); }
 
 .card-actions { display: flex; gap: 8px; margin-top: 10px; }
 
-.inbox-item { padding: 2px 0 2px 11px; border-left: 3px solid var(--border); }
-.inbox-item + .inbox-item { margin-top: 14px; padding-top: 14px; }
-.inbox-head { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 5px; }
-.inbox-head .card-name { flex: 1; }
-.inbox-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--display); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.inbox-group { margin-bottom: 18px; }
+.inbox-group-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; margin: 0 4px 6px; }
+.inbox-group-head .cnt { color: var(--muted); font-weight: 500; }
 .inbox-type-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-.inbox-group-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 10px; }
-.inbox-group-head:not(:first-child) { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.inbox-bulk { margin-left: auto; background: none; border: none; color: var(--neutral); font: 500 12px var(--body); cursor: pointer; padding: 4px 0; }
+.inbox-list { background: var(--surface); border-radius: 12px; }
+.inbox-row { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; row-gap: 2px; align-items: center; padding: 11px 14px; }
+.inbox-row + .inbox-row { border-top: 1px solid var(--border); }
+.inbox-row .card-name { margin: 0; font-weight: 500; }
+.inbox-row .time-meta { grid-column: 1; margin: 0; }
+.inbox-row > .btn-outline { grid-column: 2; grid-row: 1 / span 2; }
+.inbox-row.inbox-review { grid-template-columns: 1fr; gap: 10px; }
+.time-meta b[data-left] { white-space: nowrap; }
+.rv-top { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; }
+.rv-top.nophoto { grid-template-columns: 1fr auto; }
+.rv-text { min-width: 0; display: grid; gap: 2px; }
+.rv-thumb { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; display: block; cursor: zoom-in; background: var(--surface2); }
+.rv-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-outline { background: none; border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px; font: 500 13px var(--body); cursor: pointer; white-space: nowrap; }
+.btn-outline:active { background: var(--surface2); }
+.btn-outline.danger { color: var(--red); }
+.photo-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 900; align-items: center; justify-content: center; padding: 16px; }
+.photo-view.open { display: flex; }
+.photo-view img { max-width: 100%; max-height: 100%; border-radius: 10px; }
 
 .quota-card { margin-bottom: 12px; border-left: 3px solid transparent; }
 .quota-card.ok { border-left-color: var(--green); }
@@ -181,7 +172,6 @@ body {
 .btn:active { transform: scale(0.96); }
 .btn-primary { background: var(--accent); color: #fff; width: 100%; padding: 15px; font-size: 14px; border-radius: 14px; }
 .btn-green { background: rgba(0,214,143,0.14); color: var(--green); flex: 1; }
-.btn-yellow { background: rgba(255,211,42,0.14); color: var(--yellow); flex: 1; }
 .btn-orange { background: rgba(255,159,67,0.14); color: var(--orange); flex: 1; }
 .btn-ghost { background: var(--surface2); color: var(--text); flex: 1; }
 .btn-neutral { background: rgba(160,160,192,0.12); color: var(--neutral); flex: 1; }
@@ -283,72 +273,6 @@ body {
 .timer-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
 .timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
 
-/* TUTORIAL */
-.tut-overlay { display: none; position: fixed; inset: 0; z-index: 800; pointer-events: all; }
-.tut-overlay.active { display: block; }
-.tut-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
-.tut-highlight {
-  position: absolute; border-radius: 12px;
-  box-shadow: 0 0 0 3px var(--accent), 0 0 0 6px rgba(59,130,246,0.3);
-  transition: all 0.3s; pointer-events: none; z-index: 802;
-}
-.tut-bubble {
-  position: absolute; background: var(--surface);
-  border: 1.5px solid var(--accent); border-radius: 14px;
-  padding: 14px 16px; z-index: 803; max-width: 240px;
-  pointer-events: all;
-}
-.tut-arrow {
-  position: absolute; width: 0; height: 0;
-  border-left: 8px solid transparent; border-right: 8px solid transparent;
-  border-bottom: 10px solid var(--accent);
-}
-.tut-bubble-title { font-family: var(--display); font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
-.tut-bubble-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
-.tut-next { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
-
-/* LOADING */
-.loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 500; flex-direction: column; gap: 12px; }
-.loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { font-size: 12px; color: var(--muted); }
-
-
-/* CALENDAR */
-.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.cal-month { font-family: var(--display); font-size: 13px; font-weight: 700; }
-.cal-nav { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--muted); cursor: pointer; font-size: 14px; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
-.cal-day-name { text-align: center; font-size: 10px; color: var(--muted); padding: 4px 0; font-weight: 600; }
-.cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; position: relative; cursor: default; background: var(--surface); }
-.cal-day.empty { background: transparent; }
-.cal-day.today { border: 1.5px solid var(--accent); color: var(--accent); }
-.cal-day.has-done { background: rgba(0,214,143,0.15); color: var(--green); }
-.cal-day.has-failed { background: rgba(160,160,192,0.1); color: var(--muted); }
-.cal-day.has-both { background: rgba(255,211,42,0.1); color: var(--yellow); }
-.cal-dot { width: 4px; height: 4px; border-radius: 50%; position: absolute; bottom: 3px; }
-.cal-legend { display: flex; gap: 16px; justify-content: center; margin-bottom: 16px; }
-.cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
-.cal-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-
-/* TIMER CARD */
-.timer-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
-.timer-card.active { border-color: var(--orange); }
-.timer-status { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.timer-title { font-family: var(--display); font-size: 12px; font-weight: 700; }
-.timer-amount { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--yellow); }
-.timer-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
-.timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
-
-/* TUTORIAL OVERLAY */
-.tutorial-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 800; }
-.tutorial-overlay.active { display: block; }
-.tutorial-highlight { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.82), 0 0 0 3px var(--accent); z-index: 801; transition: all 0.3s; pointer-events: none; }
-.tutorial-bubble { position: absolute; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 16px; padding: 14px 16px; z-index: 802; max-width: 260px; }
-.tutorial-bubble-title { font-family: var(--display); font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--accent); }
-.tutorial-bubble-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
-.tutorial-next { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 18px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
-.tutorial-arrow { position: absolute; width: 0; height: 0; }
 /* TOAST */
 .toast { position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; z-index: 300; white-space: nowrap; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -413,12 +337,11 @@ body {
     </div>
     <div class="coach-switch" id="coach-switch"></div>
     <div class="debt-display">
-      <div class="debt-label" id="debt-label">Долг</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
-        <div class="debt-number" id="debt-number">0</div>
-        <button onclick="openDebtModal(S.role)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--muted);font-size:12px;cursor:pointer">✏️</button>
+      <div>
+        <div class="debt-label" id="debt-label">Долг</div>
+        <div class="debt-number"><span id="debt-number">0</span><span class="debt-rub">₽</span></div>
       </div>
-      <div class="debt-rub">рублей</div>
+      <button class="debt-edit" onclick="openDebtModal(S.role)">Изменить</button>
     </div>
   </div>
 
@@ -504,6 +427,8 @@ body {
     </div>
   </div>
 </div>
+<div class="photo-view" id="photo-view" onclick="this.classList.remove('open')"><img id="photo-view-img" alt="Отчёт"></div>
+
 <div class="tut-overlay" id="tut-overlay">
   <div class="tut-backdrop"></div>
   <div class="tut-highlight" id="tut-hl"></div>
@@ -736,12 +661,12 @@ async function load() {
         return true;
       }
     }
-  } catch(e) { console.log('JSONBin ERROR:', e.message); }
+  } catch(e) { console.warn('JSONBin ERROR:', e.message); }
 
   try {
     const backup = localStorage.getItem('acc-backup');
     if (backup) { applyLoaded(JSON.parse(backup)); return true; }
-  } catch(e) { console.log('localStorage ERROR:', e); }
+  } catch(e) { console.warn('localStorage ERROR:', e); }
   return false;
 }
 
@@ -1000,6 +925,9 @@ function tickCountdowns() {
     txt.textContent = countdownText(el.dataset.cdLabel, timeLeft(end));
     txt.classList.toggle('warn', pct > 79);
   });
+  document.querySelectorAll('[data-left]').forEach(el => {
+    el.textContent = timeLeft(el.dataset.left) || 'время вышло';
+  });
 }
 setInterval(tickCountdowns, 1000);
 
@@ -1007,20 +935,12 @@ function deadlineStr(dl) {
   return new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 }
 
-// Для тренера: дедлайн и время отчёта — крупно и заметно
+// Для тренера: дедлайн и время отчёта одной строкой
 function coachTimeMeta(t) {
   const over = new Date(t.deadline) < new Date() && !['done','failed','burned'].includes(t.status);
-  let html = `<div class="time-callout${over ? ' overdue' : ''}">
-      <div class="time-callout-label">Дедлайн, который поставил ученик</div>
-      <div class="time-callout-value">⏰ ${deadlineStr(t.deadline)}</div>
-    </div>`;
-  if (t.reportedAt) {
-    html += `<div class="time-callout report">
-      <div class="time-callout-label">Ученик отправил ответ</div>
-      <div class="time-callout-value">📸 ${deadlineStr(t.reportedAt)}</div>
-    </div>`;
-  }
-  return html;
+  let html = `дедлайн <b${over && !t.reportedAt ? ' class="late"' : ''}>${deadlineStr(t.deadline)}</b>`;
+  if (t.reportedAt) html = `ответ <b>${deadlineStr(t.reportedAt)}</b> · дедлайн ${deadlineStr(t.deadline)}`;
+  return `<div class="time-meta">${html}</div>`;
 }
 
 // RENDER
@@ -1131,8 +1051,6 @@ function taskCard(t, role) {
   </div>`;
 }
 
-function studentTaskCard(t) { return taskCard(t, 'student'); }
-
 // Норма активности: не меньше WEEKLY_QUOTA выполненных задач за 7 дней
 const WEEKLY_QUOTA = 4;
 
@@ -1195,45 +1113,49 @@ function renderQuotaCard() {
   </div>`;
 }
 
-// Тип входящей задачи для тренера: что именно нужно сделать + цвет
+// Тип входящей задачи для тренера: у каждого статуса свой цвет точки
 const INBOX_TYPE = {
-  pending:  { color: 'var(--orange)', icon: '✋', label: 'Подтвердить задачу' },
-  reported: { color: 'var(--yellow)', icon: '📸', label: 'Проверить отчёт' },
-  overdue:  { color: 'var(--red)',    icon: '⚠',  label: 'Просрочка → штраф' },
+  overdue:  { color: 'var(--red)',    label: 'Просрочено' },
+  reported: { color: 'var(--yellow)', label: 'На проверке' },
+  pending:  { color: 'var(--violet)', label: 'Ждут подтверждения' },
 };
 
-// Одна пронумерованная строка входящих тренера (внутри общего бокса)
-function coachInboxItem(t, n) {
-  const meta = INBOX_TYPE[t.status] || { color: 'var(--accent)', icon: '•', label: t.status };
-
-  let timer = '';
-  if (t.status === 'overdue' && t.overdueAt) {
-    const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000).toISOString();
-    timer = timerHTML(t.overdueAt, expiry, 'На подтверждение просрочки');
-  }
-
-  let actions = '';
-  if (t.status === 'pending') {
-    actions = `<div class="card-actions"><button class="btn btn-green" onclick="confirmTask('${t.id}')">✓ Видел, подтверждаю</button></div>`;
-  } else if (t.status === 'reported') {
-    actions = `<div class="card-actions">
-      <button class="btn btn-green" onclick="reviewTask('${t.id}',true)">✓ Принять</button>
-      <button class="btn btn-neutral" onclick="reviewTask('${t.id}',false)">✗ Отклонить</button>
+// Строка входящих тренера
+function coachInboxItem(t) {
+  if (t.status === 'reported') {
+    const thumb = t.photo ? `<img src="${t.photo}" class="rv-thumb" alt="Отчёт" onclick="openPhoto('${t.id}')">` : '';
+    return `<div class="inbox-row inbox-review">
+      <div class="rv-top${thumb ? '' : ' nophoto'}">
+        ${thumb}
+        <div class="rv-text"><div class="card-name">${t.name}</div>${coachTimeMeta(t)}</div>
+        <div class="card-fine">${t.fine} ₽</div>
+      </div>
+      <div class="rv-btns">
+        <button class="btn btn-green" onclick="reviewTask('${t.id}',true)">Принять</button>
+        <button class="btn-outline" onclick="reviewTask('${t.id}',false)">Отклонить</button>
+      </div>
     </div>`;
-  } else if (t.status === 'overdue') {
-    actions = `<div class="card-actions"><button class="btn btn-orange" onclick="confirmOverdue('${t.id}')">👁 Видел просрочку → штраф</button></div>`;
   }
-
-  const photoHtml = (t.status === 'reported' && t.photo) ? `<img src="${t.photo}" class="report-photo">` : '';
-
-  return `<div class="inbox-item" style="border-left-color:${meta.color}">
-    <div class="inbox-head">
-      <span class="inbox-num" style="background:${meta.color}">${n}</span>
-      <span class="card-name">${t.name}</span>
-      <span class="card-fine">${t.fine}₽</span>
-    </div>
-    ${coachTimeMeta(t)}${photoHtml}${timer}${actions}
+  if (t.status === 'overdue') {
+    const expiry = new Date(new Date(t.overdueAt || t.deadline).getTime() + 12*3600000).toISOString();
+    return `<div class="inbox-row">
+      <div class="card-name">${t.name}</div>
+      <button class="btn-outline danger" onclick="confirmOverdue('${t.id}')">Штраф ${t.fine} ₽</button>
+      <div class="time-meta">дедлайн ${deadlineStr(t.deadline)} · решить за <b data-left="${expiry}">${timeLeft(expiry) || 'время вышло'}</b></div>
+    </div>`;
+  }
+  return `<div class="inbox-row">
+    <div class="card-name">${t.name}</div>
+    <button class="btn-outline" aria-label="Подтвердить" onclick="confirmTask('${t.id}')">✓</button>
+    <div class="time-meta">до <b>${deadlineStr(t.deadline)}</b> · ${t.fine} ₽</div>
   </div>`;
+}
+
+function openPhoto(id) {
+  const t = S.tasks.find(t => t.id === id);
+  if (!t || !t.photo) return;
+  document.getElementById('photo-view-img').src = t.photo;
+  document.getElementById('photo-view').classList.add('open');
 }
 
 // STUDENT HISTORY
@@ -1288,20 +1210,17 @@ function renderInbox() {
   const inbox = S.tasks.filter(t => ['pending','reported','overdue'].includes(t.status));
   if (inbox.length) {
     html += `<div class="section-title">Входящие · ${inbox.length}</div>`;
-    const order = [
-      { status: 'overdue',  label: 'Просрочка → штраф' },
-      { status: 'reported', label: 'На проверке' },
-      { status: 'pending',  label: 'На подтверждение' },
-    ];
-    let box = '';
-    order.forEach(g => {
-      const items = inbox.filter(t => t.status === g.status);
+    ['overdue', 'reported', 'pending'].forEach(status => {
+      const items = inbox.filter(t => t.status === status);
       if (!items.length) return;
-      const m = INBOX_TYPE[g.status];
-      box += `<div class="inbox-group-head" style="color:${m.color}"><span class="inbox-type-dot" style="background:${m.color}"></span>${m.icon} ${g.label} · ${items.length}</div>`;
-      box += items.map((t, i) => coachInboxItem(t, i + 1)).join('');
+      const m = INBOX_TYPE[status];
+      const bulk = status === 'pending' && items.length > 1
+        ? '<button class="inbox-bulk" onclick="confirmAllPending()">Подтвердить все</button>' : '';
+      html += `<div class="inbox-group">
+        <div class="inbox-group-head"><span class="inbox-type-dot" style="background:${m.color}"></span>${m.label} <span class="cnt">${items.length}</span>${bulk}</div>
+        <div class="inbox-list">${items.map(coachInboxItem).join('')}</div>
+      </div>`;
     });
-    html += '<div class="card">' + box + '</div>';
   }
 
   if (!S.debtProposal && !inbox.length) {
@@ -1312,42 +1231,6 @@ function renderInbox() {
   html += renderTimerCard('coach');
   el.innerHTML = html;
   if (!timerEverStarted() && S.role === 'coach') setTimeout(showTutorial, 150);
-}
-
-function coachNewTaskCard(t) {
-  return `<div class="card">
-    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    ${coachTimeMeta(t)}
-    <span class="badge badge-wait">Ждёт подтверждения</span>
-    <div class="card-actions">
-      <button class="btn btn-green" onclick="confirmTask('${t.id}')">✓ Видел, подтверждаю</button>
-    </div>
-  </div>`;
-}
-
-function coachReportCard(t) {
-  return `<div class="card">
-    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    ${coachTimeMeta(t)}
-    ${t.photo ? `<img src="${t.photo}" class="report-photo">` : ''}
-    <span class="badge badge-reported">📸 Фото получено</span>
-    <div class="card-actions">
-      <button class="btn btn-green" onclick="reviewTask('${t.id}',true)">✓ Принять</button>
-      <button class="btn btn-neutral" onclick="reviewTask('${t.id}',false)">✗ Отклонить</button>
-    </div>
-  </div>`;
-}
-
-function coachOverdueCard(t) {
-  const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000).toISOString();
-  return `<div class="card">
-    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    ${coachTimeMeta(t)}
-    ${timerHTML(t.overdueAt, expiry, 'Осталось на подтверждение')}
-    <div class="card-actions">
-      <button class="btn btn-orange" onclick="confirmOverdue('${t.id}')">👁 Видел просрочку → штраф</button>
-    </div>
-  </div>`;
 }
 
 // COACH ALL TASKS
@@ -1428,6 +1311,15 @@ async function confirmTask(id) {
   t.status = 'active'; t.confirmedAt = new Date().toISOString();
   await save(); render(); toast('✅ Задача подтверждена!');
   notifyAll('✅ ' + roleName('coach') + ' подтвердил(а) задачу: ' + t.name + '\n▶ Задача запущена, ученик может приступать!');
+}
+
+async function confirmAllPending() {
+  const list = S.tasks.filter(t => t.status === 'pending');
+  if (!list.length) return;
+  const now = new Date().toISOString();
+  list.forEach(t => { t.status = 'active'; t.confirmedAt = now; });
+  await save(); render(); toast('✅ Подтверждено задач: ' + list.length);
+  notifyAll('✅ ' + roleName('coach') + ' подтвердил(а) задачи (' + list.length + '):\n' + list.map(t => '• ' + t.name).join('\n') + '\n▶ Задачи запущены, ученик может приступать!');
 }
 
 function openReport(id) {
@@ -1563,13 +1455,11 @@ async function confirmDebt(ok) {
 }
 
 function showScreen(name) {
-  console.log('showScreen:', name);
   const map = { onboard:'s-onboard', pin:'s-pin', app:'s-app' };
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(map[name]);
   if (!el) { console.error('Screen element not found:', map[name]); return; }
   el.classList.add('active');
-  console.log('Screen shown:', name);
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -1577,8 +1467,6 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.querySelectorAll('.modal-overlay').forEach(el =>
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
 );
-
-function hideTutorial() {}
 
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -1898,31 +1786,6 @@ function checkDeadlines() {
   setTimeout(checkDeadlines, 60000);
 }
 
-// ── UTILS ──
-function showScreen(name) {
-  console.log('showScreen:', name);
-  const map = { onboard:'s-onboard', pin:'s-pin', app:'s-app' };
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(map[name]);
-  if (!el) { console.error('Screen element not found:', map[name]); return; }
-  el.classList.add('active');
-  console.log('Screen shown:', name);
-}
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(el =>
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
-);
-
-function hideTutorial() {}
-
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2800);
-}
-
 
 // ── TUTORIAL ──
 function timerEverStarted() {
@@ -1930,10 +1793,8 @@ function timerEverStarted() {
 }
 
 function showTutorial() {
-  console.log('showTutorial called, timerEverStarted:', timerEverStarted(), 'role:', S.role);
   if (timerEverStarted() || S.role !== 'coach' || tutorialDismissed()) return;
   const btn = document.getElementById('start-timer-btn');
-  console.log('start-timer-btn found:', !!btn);
   if (!btn) { setTimeout(showTutorial, 300); return; }
 
   // Кнопка таймера может быть ниже экрана — прокручиваем к ней, иначе подсказка уедет за край
