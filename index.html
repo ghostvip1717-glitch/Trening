@@ -159,6 +159,7 @@ body {
 /* Строка задачи как в списках Telegram: круглая иконка, название, серая подпись */
 .trow { display: grid; grid-template-columns: 44px 1fr auto; gap: 0 12px; align-items: center; padding: 10px 14px 10px 12px; position: relative; }
 .trow + .trow::before, .trow-extra + .trow::before, .flist-add + .trow::before { content: ""; position: absolute; top: 0; left: 68px; right: 0; border-top: 1px solid var(--border); }
+.av.num { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; font-weight: 500; color: #fff; background: var(--c); }
 .t { min-width: 0; display: grid; gap: 2px; }
 .t .n { font-size: 16px; font-weight: 500; overflow-wrap: anywhere; }
@@ -976,9 +977,9 @@ function grpBox(color, title, count, inner, icon, act) {
   </div>`;
 }
 // Строка задачи: иконка, «название», серая подпись, справа сумма/кнопка; extra — под строкой
-function taskRow(t, { icon, sub = '', right = '', bar = '', extra = '', color = '' }) {
+function taskRow(t, { icon, num, sub = '', right = '', bar = '', extra = '', color = '' }) {
   return `<div class="trow">
-      <div class="av"${color ? ` style="background:${color}"` : ''}>${icon}</div>
+      <div class="av${num ? ' num' : ''}"${color ? ` style="background:${color}"` : ''}>${num || icon}</div>
       <div class="t"><div class="n">«${t.name}»</div>${bar}${sub ? `<div class="s">${sub}</div>` : ''}</div>
       <div class="r">${right}</div>
     </div>${extra ? `<div class="trow-extra">${extra}</div>` : ''}`;
@@ -1077,22 +1078,22 @@ function renderTasks() {
   const fine = t => `${t.fine} ₽`;
   const active = by('active').sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
   const addRow = `<button class="flist-add" onclick="openModal('m-task')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Новая задача</button>`;
-  html += grpBox('var(--teal)', 'В работе', active.length, addRow + rowsBox(active.map(t => taskRow(t, {
+  html += grpBox('var(--teal)', 'В работе', active.length, addRow + rowsBox(active.map((t, i) => taskRow(t, { num: i + 1,
     icon: '⏱', right: fine(t),
     bar: timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до'),
     extra: `<button class="btn btn-green" onclick="openReport('${t.id}')">📸 Отправить отчёт</button>`
   }))), '⏱');
   const overdue = by('overdue');
-  if (overdue.length) html += grpBox('var(--red)', 'Просрочено', overdue.length, rowsBox(overdue.map(t => {
+  if (overdue.length) html += grpBox('var(--red)', 'Просрочено', overdue.length, rowsBox(overdue.map((t, i) => {
     const expiry = new Date(new Date(t.overdueAt || t.deadline).getTime() + 12*3600000).toISOString();
-    return taskRow(t, { icon: '!', right: fine(t), sub: `${dlText(t, false)} · тренер решает до ${deadlineStr(expiry)}` });
+    return taskRow(t, { num: i + 1, icon: '!', right: fine(t), sub: `${dlText(t, false)} · тренер решает до ${deadlineStr(expiry)}` });
   })), '!');
   const reported = by('reported');
-  if (reported.length) html += grpBox('var(--yellow)', 'На проверке у тренера', reported.length, rowsBox(reported.map(t => taskRow(t, {
+  if (reported.length) html += grpBox('var(--yellow)', 'На проверке у тренера', reported.length, rowsBox(reported.map((t, i) => taskRow(t, { num: i + 1,
     icon: '📸', right: fine(t), sub: t.reportedAt ? `Отправлено <b>${deadlineStr(t.reportedAt)}</b> · ${dlText(t, false)}` : dlText(t)
   }))), '📸');
   const pending = by('pending');
-  if (pending.length) html += grpBox('var(--violet)', 'Ждут подтверждения', pending.length, rowsBox(pending.map(t => taskRow(t, {
+  if (pending.length) html += grpBox('var(--violet)', 'Ждут подтверждения', pending.length, rowsBox(pending.map((t, i) => taskRow(t, { num: i + 1,
     icon: '⏳', right: fine(t), sub: dlText(t)
   }))), '⏳');
   el.innerHTML = html;
@@ -1174,13 +1175,13 @@ function toggleReport(id) {
   render();
 }
 
-function coachInboxItem(t) {
+function coachInboxItem(t, i) {
   if (t.status === 'reported') {
     const hidden = hiddenReports.has(t.id);
     const photo = t.photo ? `
         <button class="rv-toggle" onclick="toggleReport('${t.id}')">${hidden ? 'Посмотреть отчёт' : 'Скрыть отчёт'}</button>
         <img src="${t.photo}" class="rv-photo" alt="Отчёт" onclick="openPhoto('${t.id}')"${hidden ? ' hidden' : ''}>` : '';
-    return taskRow(t, { icon: '📸', right: `${t.fine} ₽`, sub: coachTimeMeta(t), extra: `${photo}
+    return taskRow(t, { num: i + 1, icon: '📸', right: `${t.fine} ₽`, sub: coachTimeMeta(t), extra: `${photo}
         <div class="rv-btns">
           <button class="btn btn-solid" onclick="reviewTask('${t.id}',true)">Принять</button>
           <button class="btn btn-neutral" onclick="reviewTask('${t.id}',false)">Отклонить</button>
@@ -1188,11 +1189,11 @@ function coachInboxItem(t) {
   }
   if (t.status === 'overdue') {
     const expiry = new Date(new Date(t.overdueAt || t.deadline).getTime() + 12*3600000).toISOString();
-    return taskRow(t, { icon: '!', right: `<span style="color:var(--red)">${t.fine} ₽</span>`,
+    return taskRow(t, { num: i + 1, icon: '!', right: `<span style="color:var(--red)">${t.fine} ₽</span>`,
       sub: `${dlText(t, false)} · решить за <b data-left="${expiry}">${timeLeft(expiry) || 'время вышло'}</b>`,
       extra: `<button class="btn btn-neutral" style="background:rgba(239,91,91,0.14);color:var(--red)" onclick="confirmOverdue('${t.id}')">Начислить штраф ${t.fine} ₽</button>` });
   }
-  return taskRow(t, { icon: '⏳', sub: `${dlText(t)} · ${t.fine} ₽`,
+  return taskRow(t, { num: i + 1, icon: '⏳', sub: `${dlText(t)} · ${t.fine} ₽`,
     right: `<button class="ok-btn" aria-label="Подтвердить" onclick="confirmTask('${t.id}')">✓</button>` });
 }
 
@@ -1212,10 +1213,10 @@ function renderStudentHistory() {
     html += '<div class="empty"><div class="empty-icon">📋</div>Завершённых задач пока нет</div>';
   } else {
     const ICON = { done: ['✓','var(--green)'], failed: ['✗','#6f8194'], burned: ['—','#55606d'] };
-    html += '<div class="flist plain">' + finished.slice().reverse().map(t => {
+    html += '<div class="flist plain">' + finished.slice().reverse().map((t, i) => {
       const [ic, c] = ICON[t.status];
       const badge = { done: 'badge-done">Выполнено', failed: 'badge-failed">Провалено', burned: 'badge-burned">Сгорела' }[t.status];
-      return taskRow(t, { icon: ic, color: c, sub: `${dlText(t, false)} · ${t.fine} ₽`, right: `<span class="badge ${badge}</span>` });
+      return taskRow(t, { num: i + 1, icon: ic, color: c, sub: `${dlText(t, false)} · ${t.fine} ₽`, right: `<span class="badge ${badge}</span>` });
     }).join('') + '</div>';
   }
   html += '<div class="section-title" style="margin-top:16px">История платежей</div>';
@@ -1277,7 +1278,7 @@ function renderWork() {
   const running = S.tasks.filter(t => t.status === 'active')
     .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
   let html = grpBox('var(--teal)', 'Задачи ученика', running.length, running.length
-    ? rowsBox(running.map(t => taskRow(t, { icon: '⏱', right: `${t.fine} ₽`, bar: timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до') })))
+    ? rowsBox(running.map((t, i) => taskRow(t, { num: i + 1, icon: '⏱', right: `${t.fine} ₽`, bar: timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до') })))
     : '<div class="empty">Сейчас ученик ничего не выполняет</div>', '⏱');
   html += grpBox('var(--orange)', 'Таймер бездействия', null, renderTimerCard('coach'), '⏲');
   el.innerHTML = html;
@@ -1324,9 +1325,9 @@ function renderAll() {
     };
     const ICON = { pending: ['⏳','var(--violet)'], active: ['⏱','var(--teal)'], reported: ['📸','var(--yellow)'], overdue: ['!','var(--red)'],
       done: ['✓','var(--green)'], failed: ['✗','#6f8194'], burned: ['—','#55606d'] };
-    html += '<div class="flist plain">' + S.tasks.slice().reverse().map(t => {
+    html += '<div class="flist plain">' + S.tasks.slice().reverse().map((t, i) => {
       const [ic, c] = ICON[t.status] || ['•', 'var(--hint)'];
-      return taskRow(t, { icon: ic, color: c, right: badgesAll[t.status] || '',
+      return taskRow(t, { num: i + 1, icon: ic, color: c, right: badgesAll[t.status] || '',
         bar: t.status === 'active' ? timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до') : '',
         sub: t.status === 'active' ? '' : coachTimeMeta(t) });
     }).join('') + '</div>';
