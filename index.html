@@ -109,15 +109,18 @@ body {
 .progress-wrap { margin: 8px 0 4px; }
 .progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
 .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
-.progress-fill.green { background: var(--green); }
-.progress-fill.yellow { background: var(--yellow); }
-.progress-fill.orange { background: var(--orange); }
-.progress-time { font-size: 11px; color: var(--muted); }
-.progress-time.warn { color: var(--orange); }
+.progress-fill.ok { background: var(--neutral); }
+.progress-fill.late { background: var(--red); }
+.progress-time { font-size: 12px; color: var(--neutral); font-variant-numeric: tabular-nums; }
+.progress-time b { color: var(--text); font-weight: 500; }
+.progress-time.warn b { color: var(--red); }
+.inbox-row .progress-wrap { grid-column: 1 / -1; margin: 6px 0 0; }
+.inbox-row .progress-bar { height: 3px; }
 
 /* BADGES */
 .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.04em; }
-.badge-wait { background: rgba(255,159,67,0.15); color: var(--orange); }
+.badge-wait { background: rgba(154,140,255,0.14); color: var(--violet); }
+.badge-late { background: rgba(255,94,87,0.14); color: var(--red); }
 .badge-active { background: rgba(59,130,246,0.15); color: var(--accent); }
 .badge-reported { background: rgba(255,211,42,0.12); color: var(--yellow); }
 .badge-done { background: rgba(0,214,143,0.12); color: var(--green); }
@@ -903,11 +906,8 @@ function progressPct(start, end) {
   return Math.min(100, Math.max(0, (elapsed / total) * 100));
 }
 
-function progressColor(pct) {
-  if (pct < 50) return 'green';
-  if (pct < 80) return 'yellow';
-  return 'orange';
-}
+// Спокойная серая полоса; красная, когда осталось меньше 20% времени
+function progressColor(pct) { return pct < 80 ? 'ok' : 'late'; }
 
 function timerHTML(startAt, deadline, label) {
   const pct = progressPct(startAt, deadline);
@@ -917,11 +917,13 @@ function timerHTML(startAt, deadline, label) {
   return `
     <div class="progress-wrap" data-cd-start="${startAt}" data-cd-end="${deadline}" data-cd-label="${label}">
       <div class="progress-bar"><div class="progress-fill ${color}" style="width:${pct}%"></div></div>
-      <div class="progress-time ${warn ? 'warn' : ''}">${countdownText(label, left)}</div>
+      <div class="progress-time ${warn ? 'warn' : ''}">${countdownText(label, left, deadline)}</div>
     </div>`;
 }
 
-function countdownText(label, left) { return label + ': ' + (left ? 'осталось ' + left : 'время вышло'); }
+function countdownText(label, left, end) {
+  return (left ? 'осталось <b>' + left + '</b>' : '<b>время вышло</b>') + ' · ' + label + ' ' + deadlineStr(end);
+}
 
 // Посекундное обновление таймеров без полной перерисовки
 function tickCountdowns() {
@@ -932,7 +934,7 @@ function tickCountdowns() {
     fill.style.width = pct + '%';
     fill.className = 'progress-fill ' + progressColor(pct);
     const txt = el.querySelector('.progress-time');
-    txt.textContent = countdownText(el.dataset.cdLabel, timeLeft(end));
+    txt.innerHTML = countdownText(el.dataset.cdLabel, timeLeft(end), end);
     txt.classList.toggle('warn', pct > 79);
   });
   document.querySelectorAll('[data-left]').forEach(el => {
@@ -1010,7 +1012,7 @@ function taskCard(t, role) {
     pending: '<span class="badge badge-wait">⏳ Ждёт подтверждения тренера</span>',
     active: '<span class="badge badge-active">● Активна</span>',
     reported: '<span class="badge badge-reported">📸 Отчёт на проверке</span>',
-    overdue: '<span class="badge badge-wait">⚠ Просрочена</span>',
+    overdue: '<span class="badge badge-late">⚠ Просрочена</span>',
     done: '<span class="badge badge-done">✓ Выполнено</span>',
     failed: '<span class="badge badge-failed">✗ Провалено</span>',
     burned: '<span class="badge badge-burned">— Сгорела</span>',
@@ -1018,11 +1020,11 @@ function taskCard(t, role) {
 
   let timer = '';
   if (t.status === 'active') {
-    timer = timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'До дедлайна');
+    timer = timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до');
   }
   if (t.status === 'overdue' && t.overdueAt) {
     const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000).toISOString();
-    timer = timerHTML(t.overdueAt, expiry, 'На подтверждение просрочки');
+    timer = timerHTML(t.overdueAt, expiry, 'тренер решает до');
   }
 
   let actions = '';
@@ -1052,7 +1054,8 @@ function taskCard(t, role) {
 
   const timeBlock = role === 'coach'
     ? coachTimeMeta(t)
-    : `<div class="card-deadline">⏰ ${deadlineStr(t.deadline)}</div>`;
+    : (t.status === 'active' ? '' : `<div class="time-meta">дедлайн <b>${deadlineStr(t.deadline)}</b></div>`);
+  if (t.status === 'active') badges.active = '';
 
   return `<div class="card">
     <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
@@ -1237,6 +1240,18 @@ function renderInbox() {
     html += '<div class="empty"><div class="empty-icon">✅</div>Всё проверено.<br>Новых входящих нет.</div>';
   }
 
+  // Задачи в работе: сколько времени осталось у ученика
+  const running = S.tasks.filter(t => t.status === 'active')
+    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+  if (running.length) {
+    html += `<div class="section-title">В работе · ${running.length}</div>
+      <div class="inbox-group"><div class="inbox-list">${running.map(t => `<div class="inbox-row">
+        <div class="card-name">${t.name}</div>
+        <div class="card-fine">${t.fine} ₽</div>
+        ${timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до')}
+      </div>`).join('')}</div></div>`;
+  }
+
   html += renderMiniCalendar();
   html += renderTimerCard('coach');
   el.innerHTML = html;
@@ -1276,7 +1291,7 @@ function renderAll() {
       pending: '<span class="badge badge-wait">⏳ Ждёт подтверждения</span>',
       active: '<span class="badge badge-active">● Активна</span>',
       reported: '<span class="badge badge-reported">📸 На проверке</span>',
-      overdue: '<span class="badge badge-wait">⚠ Просрочена</span>',
+      overdue: '<span class="badge badge-late">⚠ Просрочена</span>',
       done: '<span class="badge badge-done">✓ Выполнено</span>',
       failed: '<span class="badge badge-failed">✗ Провалено</span>',
       burned: '<span class="badge badge-burned">— Сгорела</span>',
@@ -1284,8 +1299,8 @@ function renderAll() {
     html += S.tasks.slice().reverse().map(t => `
       <div class="card">
         <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-        ${coachTimeMeta(t)}
-        ${badgesAll[t.status]||''}
+        ${t.status === 'active' ? timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до') : coachTimeMeta(t)}
+        ${t.status === 'active' ? '' : badgesAll[t.status]||''}
       </div>`).join('');
   }
 
@@ -1706,7 +1721,7 @@ function renderTimerCard(role) {
   }
 
   return `<div class="timer-card active" id="timer-card">
-    <div class="timer-status"><div class="timer-title">⏱ Таймер бездействия</div><span class="badge badge-wait">Активен</span></div>
+    <div class="timer-status"><div class="timer-title">⏱ Таймер бездействия</div><span class="badge badge-pending">Активен</span></div>
     <div class="timer-amount">${base}₽ / базовый штраф</div>
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" style="width:${barPct.toFixed(1)}%;background:${barColor}"></div></div>
