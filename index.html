@@ -720,7 +720,7 @@ function saveIdentity() { identityDirty = true; kickFlush(); }
 function kickFlush() {
   try { localStorage.setItem('acc-backup', JSON.stringify(DB)); } catch(e) {}
   if (!saving) saving = flush().then(ok => {
-    if (!ok) toast('⚠️ Не удалось сохранить — проверь интернет');
+    if (!ok) toast('⚠️ Не удалось сохранить (' + (lastSaveError || 'неизвестно') + ')');
     return ok;
   }).finally(() => { saving = null; });
 }
@@ -730,8 +730,9 @@ function kickFlush() {
 let lastSaveError = '';
 async function flush() {
   let ok = true;
+  lastSaveError = '';
   while (dirty.size || identityDirty) {
-    if (!TOKEN) { dirty.clear(); identityDirty = false; return false; }
+    if (!TOKEN) { dirty.clear(); identityDirty = false; lastSaveError = 'нет входа — открой приложение заново'; return false; }
     const body = { branches: {} };
     [...dirty].forEach(b => { body.branches[b] = DB.branches[b]; });
     dirty.clear();
@@ -739,7 +740,7 @@ async function flush() {
     identityDirty = false;
     try {
       const r = await api('/save', body);
-      if (!r.ok) { ok = false; lastSaveError = (r.data?.error || 'код ' + r.status) + (r.data?.bytes ? ' ' + Math.round(r.data.bytes / 1024) + ' КБ' : ''); }
+      if (!r.ok) { ok = false; lastSaveError = [r.data?.error || 'код ' + r.status, r.data?.bytes ? Math.round(r.data.bytes / 1024) + ' КБ' : '', r.data?.detail || ''].filter(Boolean).join(' '); }
     } catch(e) { ok = false; lastSaveError = 'нет связи'; }
   }
   return ok;
