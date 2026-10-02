@@ -6,8 +6,9 @@
  *  - проверяет PIN-коды (в базе лежат только их хеши) и выдаёт токен входа;
  *  - читает и записывает данные только по токену: тренер меняет только свою ветку;
  *  - отправляет уведомления бота ученику (тоже только по токену);
- *  - хранит фото отчётов в отдельных бинах JSONBin (у каждого свой лимит 100 КБ),
- *    в общем документе остаётся только id фото; после проверки бин удаляется.
+ *  - хранит фото отчётов отдельно от общего документа: фото режется на части по 90 КБ,
+ *    каждая часть — свой бин JSONBin (лимит 100 КБ на бин). В задаче остаётся только
+ *    id частей через точку; после проверки отчёта бины удаляются.
  *
  * ─────────────────────────────────────────────────────────────
  * НАСТРОЙКА (один раз):
@@ -87,8 +88,14 @@ async function writeDB(env, db) {
   }));
   // Старые отчёты с фото внутри документа: выносим фото в отдельные бины, чтобы освободить место
   for (const t of inline) {
-    const id = await createPhotoBin(env, t.photo);
-    if (id) { t.photoId = id; t.photo = null; }
+    const ids = [];
+    for (let i = 0; i < t.photo.length; i += PHOTO_CHUNK) {
+      const id = await createPhotoBin(env, t.photo.slice(i, i + PHOTO_CHUNK));
+      if (!id) break;
+      ids.push(id);
+    }
+    if (ids.length * PHOTO_CHUNK >= t.photo.length) { t.photoId = ids.join('.'); t.photo = null; }
+    else await deletePhoto(env, ids.join('.'));
   }
   const body = JSON.stringify(db);
   if (enc.encode(body).length > BIN_LIMIT) return 'too_big';
@@ -98,9 +105,7 @@ async function writeDB(env, db) {
     body,
   });
   if (!r.ok) return 'write_failed';
-  await Promise.allSettled(stale.map(id => fetch(PHOTO_URL + '/' + encodeURIComponent(id), {
-    method: 'DELETE', headers: { 'X-Master-Key': env.JSONBIN_KEY },
-  })));
+  await deletePhoto(env, stale.join('.'));
   return 'ok';
 }
 
@@ -118,21 +123,41 @@ async function createPhotoBin(env, data) {
   return res?.metadata?.id || null;
 }
 
+const PHOTO_CHUNK = 90000;        // символов base64 в одной части (бин ≤ 100 КБ)
+const PHOTO_MAX = 10 * PHOTO_CHUNK; // до ~900 КБ на одно фото
+const ID_RE = /^[a-f0-9]{24}(\.[a-f0-9]{24}){0,9}$/i;
+
+async function deletePhoto(env, ids) {
+  const list = String(ids || '').split('.').filter(Boolean);
+  await Promise.allSettled(list.map(id => fetch(PHOTO_URL + '/' + encodeURIComponent(id), {
+    method: 'DELETE', headers: { 'X-Master-Key': env.JSONBIN_KEY },
+  })));
+}
+
 async function photoPut(env, acc, { data }) {
   if (acc !== 'student') return json({ error: 'forbidden' }, 403);
   data = String(data || '');
   if (!data.startsWith('data:image/')) return json({ error: 'bad_photo' }, 400);
-  if (enc.encode(data).length > BIN_LIMIT) return json({ error: 'too_big' }, 413);
-  const id = await createPhotoBin(env, data);
-  return id ? json({ id }) : json({ error: 'photo_failed' }, 502);
+  if (data.length > PHOTO_MAX) return json({ error: 'too_big' }, 413);
+  const ids = [];
+  for (let i = 0; i < data.length; i += PHOTO_CHUNK) {
+    const id = await createPhotoBin(env, data.slice(i, i + PHOTO_CHUNK));
+    if (!id) { await deletePhoto(env, ids.join('.')); return json({ error: 'photo_failed' }, 502); }
+    ids.push(id);
+  }
+  return json({ id: ids.join('.') });
 }
 
 async function photoGet(env, { id }) {
-  if (!/^[a-f0-9]{24}$/i.test(String(id || ''))) return json({ error: 'bad_id' }, 400);
-  const r = await fetch(PHOTO_URL + '/' + id + '/latest', { headers: { 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Meta': 'false' } });
-  if (!r.ok) return json({ error: 'not_found' }, 404);
-  const rec = await r.json();
-  return json({ data: (rec?.record || rec)?.data || null });
+  if (!ID_RE.test(String(id || ''))) return json({ error: 'bad_id' }, 400);
+  const parts = await Promise.all(String(id).split('.').map(async part => {
+    const r = await fetch(PHOTO_URL + '/' + part + '/latest', { headers: { 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Meta': 'false' } });
+    if (!r.ok) return null;
+    const rec = await r.json();
+    return (rec?.record || rec)?.data ?? null;
+  }));
+  if (parts.some(p => p === null)) return json({ error: 'not_found' }, 404);
+  return json({ data: parts.join('') });
 }
 
 const obj = v => (v && typeof v === 'object' ? v : {});

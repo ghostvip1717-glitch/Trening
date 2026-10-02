@@ -1404,8 +1404,8 @@ function openReport(id) {
   openModal('m-report');
 }
 
-// Скриншоту нужно больше пикселей, чтобы читался текст; размер ограничен лимитом JSONBin
-const IMG_OPTS = { photo: { max: 400, budget: 60000 }, shot: { max: 1000, budget: 90000 } };
+// Фото уходит в отдельное хранилище частями, поэтому можно хорошее качество (до ~400 КБ)
+const IMG_OPTS = { photo: { max: 1280, budget: 300000 }, shot: { max: 1600, budget: 400000 } };
 
 function compressImage(img, max, budget) {
   let scale = Math.min(1, max / Math.max(img.width, img.height));
