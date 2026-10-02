@@ -315,7 +315,7 @@ body {
 .timer-inactive { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
 
 /* TOAST */
-.toast { position: fixed; bottom: calc(var(--bot-gap) + 76px); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; z-index: 300; white-space: nowrap; pointer-events: none; }
+.toast { position: fixed; bottom: calc(var(--bot-gap) + 76px); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; z-index: 300; white-space: normal; text-align: center; width: max-content; max-width: calc(100% - 32px); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
@@ -667,6 +667,7 @@ function kickFlush() {
 
 // Воркер берёт свежий документ и подменяет в нём только наши ветки и наши данные входа,
 // чтобы не затирать изменения других участников
+let lastSaveError = '';
 async function flush() {
   let ok = true;
   while (dirty.size || identityDirty) {
@@ -678,8 +679,8 @@ async function flush() {
     identityDirty = false;
     try {
       const r = await api('/save', body);
-      if (!r.ok) ok = false;
-    } catch(e) { ok = false; }
+      if (!r.ok) { ok = false; lastSaveError = (r.data?.error || 'код ' + r.status) + (r.data?.bytes ? ' ' + Math.round(r.data.bytes / 1024) + ' КБ' : ''); }
+    } catch(e) { ok = false; lastSaveError = 'нет связи'; }
   }
   return ok;
 }
@@ -1453,11 +1454,12 @@ async function submitReport() {
 
   // Фото кладём в отдельное хранилище (свой лимит 100 КБ на каждое фото), в задаче — только id.
   // Если воркер ещё старый — фото уходит в общий документ, пережатое под свободное место.
-  let photo = null, photoId = null;
+  let photo = null, photoId = null, photoErr = '';
   try {
     const r = await api('/photo', { data: photoBase64 }, 20000);
     if (r.ok && r.data?.id) photoId = r.data.id;
-  } catch(e) {}
+    else photoErr = 'фото: ' + (r.data?.error || 'код ' + r.status);
+  } catch(e) { photoErr = 'фото: нет связи'; }
   if (!photoId) {
     writeBack();
     const room = BIN_LIMIT - jsonBytes(DB) - 1500;
@@ -1474,7 +1476,7 @@ async function submitReport() {
   btn.disabled = false; btn.textContent = 'Отправить тренеру';
   if (!ok) {
     Object.assign(t, prev); writeBack(); render();
-    toast('⚠️ Отчёт не отправлен. Попробуй ещё раз');
+    toast('⚠️ Отчёт не отправлен (' + [photoErr, lastSaveError].filter(Boolean).join('; ') + '). Попробуй ещё раз');
     return;
   }
   closeModal('m-report'); render(); toast('📸 Отчёт отправлен тренеру!');

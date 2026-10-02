@@ -79,12 +79,17 @@ async function readDB(env) {
 
 async function writeDB(env, db) {
   // Фото нужно только пока отчёт ждёт проверки; бины проверенных фото удаляем после записи
-  const stale = [];
+  const stale = [], inline = [];
   COACHES.forEach(c => (db.branches[c]?.tasks || []).forEach(t => {
-    if (t.status === 'reported') return;
+    if (t.status === 'reported') { if (t.photo) inline.push(t); return; }
     if (t.photo) t.photo = null;
     if (t.photoId) { stale.push(t.photoId); t.photoId = null; }
   }));
+  // Старые отчёты с фото внутри документа: выносим фото в отдельные бины, чтобы освободить место
+  for (const t of inline) {
+    const id = await createPhotoBin(env, t.photo);
+    if (id) { t.photoId = id; t.photo = null; }
+  }
   const body = JSON.stringify(db);
   if (enc.encode(body).length > BIN_LIMIT) return 'too_big';
   const r = await fetch(BIN_URL, {
@@ -102,19 +107,24 @@ async function writeDB(env, db) {
 // ── ФОТО ОТЧЁТОВ: отдельный бин на каждое фото ──
 const PHOTO_URL = 'https://api.jsonbin.io/v3/b';
 
-async function photoPut(env, acc, { data }) {
-  if (acc !== 'student') return json({ error: 'forbidden' }, 403);
-  data = String(data || '');
-  if (!data.startsWith('data:image/')) return json({ error: 'bad_photo' }, 400);
-  if (enc.encode(data).length > BIN_LIMIT) return json({ error: 'too_big' }, 413);
+async function createPhotoBin(env, data) {
   const r = await fetch(PHOTO_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Private': 'true', 'X-Bin-Name': 'report-photo' },
     body: JSON.stringify({ data }),
   });
-  if (!r.ok) return json({ error: 'photo_failed', status: r.status }, 502);
-  const res = await r.json();
-  return json({ id: res?.metadata?.id });
+  if (!r.ok) return null;
+  const res = await r.json().catch(() => ({}));
+  return res?.metadata?.id || null;
+}
+
+async function photoPut(env, acc, { data }) {
+  if (acc !== 'student') return json({ error: 'forbidden' }, 403);
+  data = String(data || '');
+  if (!data.startsWith('data:image/')) return json({ error: 'bad_photo' }, 400);
+  if (enc.encode(data).length > BIN_LIMIT) return json({ error: 'too_big' }, 413);
+  const id = await createPhotoBin(env, data);
+  return id ? json({ id }) : json({ error: 'photo_failed' }, 502);
 }
 
 async function photoGet(env, { id }) {
@@ -198,7 +208,7 @@ async function save(env, acc, { branches, identity }) {
   if (identity.chatId !== undefined) db.chatIds[acc] = identity.chatId;
   if (identity.name !== undefined) db.names[acc] = String(identity.name).slice(0, 64);
   const res = await writeDB(env, db);
-  if (res === 'too_big') return json({ error: res }, 413);
+  if (res === 'too_big') return json({ error: res, bytes: enc.encode(JSON.stringify(db)).length }, 413);
   if (res !== 'ok') return json({ error: res }, 502);
   return json({ ok: true });
 }
