@@ -1,8 +1,10 @@
 # State.md
 - Telegram Mini App Accountability (ученик/тренер): index.html + notify-worker.js (Cloudflare Worker), данные в JSONBin
+- Доступ к JSONBin только через воркер (секреты Cloudflare: JSONBIN_KEY, BOT_TOKEN). Эндпоинты: GET /status, POST /login, /register, GET /data, POST /save, /notify; токен Bearer после входа по PIN, тренер пишет только свою ветку
+  - PIN хранится хешем (h1:…), в приложение не отдаётся (вместо pins — registered); 10 неверных PIN → блок 15 мин
 - JSONBin формат v2: { version:2, pins/chatIds/names: {student, coach1, coach2}, branches: {coach1, coach2} }; ветка = debt/tasks/payments/history/debtProposal/inactivityTimer
   - старый формат автоматически мигрирует: coach → coach1
   - S = вид активной ветки (S.role 'student'|'coach'), ME = аккаунт, BR = ветка
   - PIN уникален и определяет аккаунт; регистрация второго тренера на экране PIN, пока coach2 свободен
-  - save() мержит в свежий документ только изменённые ветки + свои данные входа
+  - save() шлёт воркеру только изменённые ветки + свои данные входа, воркер мержит их в свежий документ
 - Уведомления бота получает только ученик (notifyAll → S.chatIds.student)
