@@ -456,34 +456,45 @@ let S = buildView();
 let photoBase64 = null;
 let photoImg = null, photoKind = 'photo'; // исходник: пережимаем, если не влезает в лимит JSONBin
 
-// STORAGE
-const BIN_ID = '6a418902f5f4af5e293e9047';
-const API_KEY = '$2a$10$O.QnY26A0QLeud4xNtUmeOw5MS9nB1D6C1dmvPSl85WUEnwZKyE1i';
-const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
+// STORAGE: данные читает и пишет воркер (у него ключ JSONBin), приложение — по токену входа
+const API_URL = 'https://trening-notify.ghostvip1717.workers.dev';
+let TOKEN = null;
 // Бесплатный JSONBin отклоняет запись больше 100 КБ — весь документ (обе ветки, все фото) должен влезть
 const BIN_LIMIT = 98000;
 function jsonBytes(o) { return new Blob([JSON.stringify(o)]).size; }
 
+async function api(path, body, timeout) {
+  const ctrl = new AbortController();
+  const timer = timeout ? setTimeout(() => ctrl.abort(), timeout) : null;
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (TOKEN) headers.Authorization = 'Bearer ' + TOKEN;
+    const r = await fetch(API_URL + path, {
+      method: body === undefined ? 'GET' : 'POST', headers, signal: ctrl.signal,
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 401 && TOKEN && path !== '/login') onSessionExpired();
+    return { ok: r.ok, status: r.status, data };
+  } finally { if (timer) clearTimeout(timer); }
+}
+
+// Токен истёк — заново вход по PIN
+function onSessionExpired() {
+  TOKEN = null; ME = null;
+  toast('🔒 Сессия истекла — введи PIN');
+  showLoginPin();
+}
+
 // NOTIFICATIONS
-const NOTIFY_URL = 'https://trening-notify.ghostvip1717.workers.dev';
 const BOT_USERNAME = 'Abc7417bot'; // @username бота из BotFather (без @)
 const APP_URL = 'https://ghostvip1717-glitch.github.io/Trening/';
 // Ссылка, открывающая мини-приложение прямо в Telegram (или веб-версию, если username не задан)
 function appLink() { return BOT_USERNAME ? 'https://t.me/' + BOT_USERNAME + '?startapp' : APP_URL; }
-async function notify(chatId, text) {
-  if (!chatId) return;
-  try {
-    fetch(NOTIFY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chatId: String(chatId), message: text })
-    }).catch(() => {});
-  } catch(e) {}
-}
-
-// Уведомления от бота получает только ученик; тренерам бот не пишет
+// Уведомления от бота получает только ученик (адресата выбирает воркер); тренерам бот не пишет
 function notifyAll(text) {
-  notify(S.chatIds?.student, text);
+  if (!TOKEN || !S.chatIds?.student) return;
+  api('/notify', { message: text }).catch(() => {});
 }
 
 // Текст личного сообщения тренеру (от лица ученика)
@@ -544,7 +555,7 @@ function emptyBranch() {
 }
 
 function emptyDB() {
-  return { version: 2, pins: {}, chatIds: {}, names: {}, branches: { coach1: emptyBranch(), coach2: emptyBranch() } };
+  return { version: 2, registered: {}, chatIds: {}, names: {}, branches: { coach1: emptyBranch(), coach2: emptyBranch() } };
 }
 
 function asObj(v) { return v && typeof v === 'object' ? v : {}; }
@@ -559,26 +570,16 @@ function normBranch(b) {
   return r;
 }
 
-// Привести данные к формату v2. Старый формат (один тренер) переезжает в ветку coach1.
+// Документ от воркера (формат v2, без PIN-кодов: только кто зарегистрирован)
 function normalizeDB(raw) {
   const db = emptyDB();
   if (!raw || typeof raw !== 'object') return db;
-  if (raw.branches) {
-    db.pins = asObj(raw.pins); db.chatIds = asObj(raw.chatIds); db.names = asObj(raw.names);
-    COACHES.forEach(c => { db.branches[c] = normBranch(raw.branches[c]); });
-    return db;
-  }
-  const move = (src, dst) => {
-    src = asObj(src);
-    if (src.student) dst.student = src.student;
-    if (src.coach) dst.coach1 = src.coach;
-  };
-  move(raw.pins, db.pins); move(raw.chatIds, db.chatIds); move(raw.names, db.names);
-  db.branches.coach1 = normBranch(raw);
+  db.registered = asObj(raw.registered); db.chatIds = asObj(raw.chatIds); db.names = asObj(raw.names);
+  COACHES.forEach(c => { db.branches[c] = normBranch(asObj(raw.branches)[c]); });
   return db;
 }
 
-function isRegistered(acc) { return !!DB.pins[acc]; }
+function isRegistered(acc) { return !!DB.registered[acc]; }
 function registeredCoaches() { return COACHES.filter(isRegistered); }
 function coachLabel(c) { return DB.names[c] || (c === 'coach1' ? 'Тренер 1' : 'Тренер 2'); }
 
@@ -618,37 +619,19 @@ function kickFlush() {
   }).finally(() => { saving = null; });
 }
 
-// Читаем свежий документ и подменяем в нём только свои ветки и свои данные входа,
+// Воркер берёт свежий документ и подменяет в нём только наши ветки и наши данные входа,
 // чтобы не затирать изменения других участников
 async function flush() {
   let ok = true;
   while (dirty.size || identityDirty) {
-    const branches = [...dirty]; dirty.clear();
+    if (!TOKEN) { dirty.clear(); identityDirty = false; return false; }
+    const body = { branches: {} };
+    [...dirty].forEach(b => { body.branches[b] = DB.branches[b]; });
+    dirty.clear();
+    if (identityDirty && ME) body.identity = { chatId: DB.chatIds[ME], name: DB.names[ME] };
     identityDirty = false;
-    let out = DB;
     try {
-      const r = await fetch(BIN_URL + '/latest', { headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' } });
-      if (r.ok) {
-        const data = await r.json();
-        out = normalizeDB(data?.record || data);
-        branches.forEach(b => { out.branches[b] = DB.branches[b]; });
-        // Свои данные входа пишем всегда: их могла затереть параллельная запись другого участника
-        if (ME) ['pins', 'chatIds', 'names'].forEach(k => {
-          if (DB[k][ME] !== undefined) out[k][ME] = DB[k][ME];
-        });
-      }
-    } catch(e) {}
-    // Фото нужно только пока отчёт ждёт проверки
-    Object.values(out.branches || {}).forEach(b => (b?.tasks || []).forEach(t => {
-      if (t.photo && t.status !== 'reported') t.photo = null;
-    }));
-    if (jsonBytes(out) > BIN_LIMIT) { ok = false; continue; }
-    try {
-      const r = await fetch(BIN_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
-        body: JSON.stringify(out)
-      });
+      const r = await api('/save', body);
       if (!r.ok) ok = false;
     } catch(e) { ok = false; }
   }
@@ -660,25 +643,21 @@ function applyLoaded(record) {
   S = buildView();
 }
 
+// До входа доступно только, какие роли заняты; после входа — весь документ (без PIN-кодов)
 async function load() {
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
-    const r = await fetch(BIN_URL + '/latest', {
-      headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' },
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (r.ok) {
-      const data = await r.json();
-      const record = data?.record || data;
-      if (record && typeof record === 'object') {
-        applyLoaded(record);
+    if (TOKEN) {
+      const r = await api('/data', undefined, 4000);
+      if (r.ok && r.data.db) {
+        applyLoaded(r.data.db);
         try { localStorage.setItem('acc-backup', JSON.stringify(DB)); } catch(e) {}
         return true;
       }
+    } else {
+      const r = await api('/status', undefined, 4000);
+      if (r.ok && r.data.registered) { DB.registered = r.data.registered; return true; }
     }
-  } catch(e) { console.warn('JSONBin ERROR:', e.message); }
+  } catch(e) { console.warn('API ERROR:', e.message); }
 
   try {
     const backup = localStorage.getItem('acc-backup');
@@ -740,36 +719,50 @@ function updateDots() {
     document.getElementById('d' + i).className = 'pin-dot' + (i < pinBuf.length ? ' filled' : '');
 }
 
-function handlePin() {
+// PIN проверяет воркер: сами PIN-коды в приложение не попадают
+async function handlePin() {
   const err = document.getElementById('pin-error');
+  const resetPin = msg => {
+    err.textContent = msg; pinBuf = ''; updateDots();
+  };
   if (pinMode === 'login') {
-    const found = Object.keys(DB.pins).find(a => DB.pins[a] === pinBuf);
-    if (found) enterAs(found);
-    else { err.textContent = 'Неверный PIN-код, попробуй снова'; pinBuf = ''; updateDots(); }
+    const r = await pinRequest('/login', { pin: pinBuf });
+    if (r.ok) return enterAs(r.data.acc, r.data);
+    resetPin(r.status === 429 ? '🔒 Слишком много попыток. Подожди 15 минут'
+      : r.status === 401 ? 'Неверный PIN-код, попробуй снова'
+      : 'Нет связи с сервером, попробуй ещё раз');
     return;
   }
   if (pinStep === 1) {
-    // PIN определяет аккаунт при входе, поэтому он должен быть уникальным
-    if (Object.keys(DB.pins).some(a => a !== regAcc && DB.pins[a] === pinBuf)) {
-      err.textContent = 'Этот PIN уже занят, придумай другой'; pinBuf = ''; updateDots(); return;
-    }
     pinConfirm = pinBuf; pinBuf = ''; pinStep = 2; err.textContent = '';
     document.getElementById('pin-sub').textContent = 'Повтори PIN-код для подтверждения';
     updateDots();
-  } else {
-    if (pinBuf === pinConfirm) {
-      DB.pins[regAcc] = pinBuf;
-      enterAs(regAcc);
-    } else {
-      err.textContent = 'PIN-коды не совпадают, начни заново';
-      pinBuf = ''; pinStep = 1;
-      document.getElementById('pin-sub').textContent = '4 цифры — твой ключ входа';
-      updateDots();
-    }
+    return;
   }
+  const restart = msg => {
+    pinStep = 1; document.getElementById('pin-sub').textContent = '4 цифры — твой ключ входа';
+    resetPin(msg);
+  };
+  if (pinBuf !== pinConfirm) return restart('PIN-коды не совпадают, начни заново');
+  const r = await pinRequest('/register', { acc: regAcc, pin: pinBuf });
+  if (r.ok) return enterAs(r.data.acc, r.data);
+  // PIN определяет аккаунт при входе, поэтому он должен быть уникальным
+  if (r.data.error === 'pin_taken') return restart('Этот PIN уже занят, придумай другой');
+  if (r.data.error === 'taken') { toast('Эта роль уже занята'); return route(); }
+  restart('Нет связи с сервером, попробуй ещё раз');
 }
 
-function enterAs(acc) {
+async function pinRequest(path, body) {
+  setLoading(true);
+  try { return await api(path, body, 10000); }
+  catch(e) { return { ok: false, status: 0, data: {} }; }
+  finally { setLoading(false); }
+}
+
+function enterAs(acc, session) {
+  TOKEN = session.token;
+  applyLoaded(session.db);
+  try { localStorage.setItem('acc-backup', JSON.stringify(DB)); } catch(e) {}
   ME = acc;
   BR = acc === 'student' ? pickStudentBranch() : acc;
   S = buildView();
@@ -829,7 +822,7 @@ function showOnboard() {
   w.style.display = 'none';
   if (stu && !coaches) { w.style.display = 'block'; w.textContent = '✅ Ученик зарегистрирован. Жди пока тренер войдёт.'; }
   else if (!stu && coaches) { w.style.display = 'block'; w.textContent = '✅ Тренер зарегистрирован. Жди пока ученик войдёт.'; }
-  document.getElementById('ob-login').style.display = Object.keys(DB.pins).length ? 'block' : 'none';
+  document.getElementById('ob-login').style.display = Object.values(DB.registered).some(Boolean) ? 'block' : 'none';
   showScreen('onboard');
 }
 
