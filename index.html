@@ -165,6 +165,8 @@ body {
 .t .s { font-size: 13.5px; color: var(--hint); font-variant-numeric: tabular-nums; }
 .t .s b { color: #c9d4df; font-weight: 500; }
 .t .s b.late { color: var(--red); }
+.dl-lbl { color: var(--c, var(--accent)); font-weight: 500; }
+.t .s [data-left] { white-space: nowrap; }
 .t .s b[data-left] { white-space: nowrap; }
 .r { display: flex; align-items: center; gap: 8px; color: var(--hint); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ok-btn { width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(94,181,247,0.14); color: var(--accent); font-size: 16px; font-weight: 700; display: grid; place-items: center; cursor: pointer; }
@@ -1005,11 +1007,19 @@ function deadlineStr(dl) {
   return new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 }
 
+// «Дедлайн» цветом группы + (сколько осталось, обновляется каждую секунду)
+function dlText(t, live = true) {
+  const over = new Date(t.deadline) < new Date();
+  const left = live && !['done','failed','burned'].includes(t.status)
+    ? ` (осталось <span data-left="${t.deadline}">${timeLeft(t.deadline) || 'время вышло'}</span>)` : '';
+  return `<span class="dl-lbl">Дедлайн</span> <b${over && live ? ' class="late"' : ''}>${deadlineStr(t.deadline)}</b>${left}`;
+}
+
 // Подпись строки: время ответа и дедлайн
 function coachTimeMeta(t) {
   const over = new Date(t.deadline) < new Date() && !['done','failed','burned'].includes(t.status);
   const dl = `<b${over && !t.reportedAt ? ' class="late"' : ''}>${deadlineStr(t.deadline)}</b>`;
-  return t.reportedAt ? `Ответ <b>${deadlineStr(t.reportedAt)}</b> · дедлайн ${deadlineStr(t.deadline)}` : `Дедлайн ${dl}`;
+  return t.reportedAt ? `Ответ <b>${deadlineStr(t.reportedAt)}</b> · ${dlText(t, false)}` : dlText(t);
 }
 
 // RENDER
@@ -1075,15 +1085,15 @@ function renderTasks() {
   const overdue = by('overdue');
   if (overdue.length) html += grpBox('var(--red)', 'Просрочено', overdue.length, rowsBox(overdue.map(t => {
     const expiry = new Date(new Date(t.overdueAt || t.deadline).getTime() + 12*3600000).toISOString();
-    return taskRow(t, { icon: '!', right: fine(t), sub: `Дедлайн <b class="late">${deadlineStr(t.deadline)}</b> · тренер решает до ${deadlineStr(expiry)}` });
+    return taskRow(t, { icon: '!', right: fine(t), sub: `${dlText(t, false)} · тренер решает до ${deadlineStr(expiry)}` });
   })), '!');
   const reported = by('reported');
   if (reported.length) html += grpBox('var(--yellow)', 'На проверке у тренера', reported.length, rowsBox(reported.map(t => taskRow(t, {
-    icon: '📸', right: fine(t), sub: t.reportedAt ? `Отправлено <b>${deadlineStr(t.reportedAt)}</b>` : `Дедлайн <b>${deadlineStr(t.deadline)}</b>`
+    icon: '📸', right: fine(t), sub: t.reportedAt ? `Отправлено <b>${deadlineStr(t.reportedAt)}</b> · ${dlText(t, false)}` : dlText(t)
   }))), '📸');
   const pending = by('pending');
   if (pending.length) html += grpBox('var(--violet)', 'Ждут подтверждения', pending.length, rowsBox(pending.map(t => taskRow(t, {
-    icon: '⏳', right: fine(t), sub: `Дедлайн <b>${deadlineStr(t.deadline)}</b>`
+    icon: '⏳', right: fine(t), sub: dlText(t)
   }))), '⏳');
   el.innerHTML = html;
 }
@@ -1179,10 +1189,10 @@ function coachInboxItem(t) {
   if (t.status === 'overdue') {
     const expiry = new Date(new Date(t.overdueAt || t.deadline).getTime() + 12*3600000).toISOString();
     return taskRow(t, { icon: '!', right: `<span style="color:var(--red)">${t.fine} ₽</span>`,
-      sub: `Дедлайн <b class="late">${deadlineStr(t.deadline)}</b> · решить за <b data-left="${expiry}">${timeLeft(expiry) || 'время вышло'}</b>`,
+      sub: `${dlText(t, false)} · решить за <b data-left="${expiry}">${timeLeft(expiry) || 'время вышло'}</b>`,
       extra: `<button class="btn btn-neutral" style="background:rgba(239,91,91,0.14);color:var(--red)" onclick="confirmOverdue('${t.id}')">Начислить штраф ${t.fine} ₽</button>` });
   }
-  return taskRow(t, { icon: '⏳', sub: `Дедлайн <b>${deadlineStr(t.deadline)}</b> · ${t.fine} ₽`,
+  return taskRow(t, { icon: '⏳', sub: `${dlText(t)} · ${t.fine} ₽`,
     right: `<button class="ok-btn" aria-label="Подтвердить" onclick="confirmTask('${t.id}')">✓</button>` });
 }
 
@@ -1205,7 +1215,7 @@ function renderStudentHistory() {
     html += '<div class="flist plain">' + finished.slice().reverse().map(t => {
       const [ic, c] = ICON[t.status];
       const badge = { done: 'badge-done">Выполнено', failed: 'badge-failed">Провалено', burned: 'badge-burned">Сгорела' }[t.status];
-      return taskRow(t, { icon: ic, color: c, sub: `Дедлайн <b>${deadlineStr(t.deadline)}</b> · ${t.fine} ₽`, right: `<span class="badge ${badge}</span>` });
+      return taskRow(t, { icon: ic, color: c, sub: `${dlText(t, false)} · ${t.fine} ₽`, right: `<span class="badge ${badge}</span>` });
     }).join('') + '</div>';
   }
   html += '<div class="section-title" style="margin-top:16px">История платежей</div>';
@@ -1251,7 +1261,8 @@ function renderInbox() {
     const m = INBOX_TYPE[status];
     const bulk = status === 'pending' && items.length > 1
       ? '<button class="inbox-bulk" onclick="confirmAllPending()">Подтвердить все</button>' : '';
-    html += grpBox(m.color, m.label, items.length, rowsBox(items.map(coachInboxItem)), m.icon, bulk);
+    const title = status === 'pending' ? (items.length === 1 ? 'Новая задача' : 'Новые задачи') : m.label;
+    html += grpBox(m.color, title, items.length, rowsBox(items.map(coachInboxItem)), m.icon, bulk);
   });
 
   if (!S.debtProposal && !inbox.length) {
