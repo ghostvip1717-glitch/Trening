@@ -268,7 +268,7 @@ export default {
       }
       if (request.method !== 'POST' && path !== '/data') return json({ error: 'not_found' }, 404);
 
-      let body = {};
+      let body = /** @type {any} */ ({});
       if (request.method === 'POST') {
         try { body = obj(await request.json()); } catch { return json({ error: 'bad json' }, 400); }
       }
