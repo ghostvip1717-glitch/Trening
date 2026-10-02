@@ -177,6 +177,7 @@ body {
 .rv-toggle { justify-self: start; background: none; border: 0; padding: 0; color: var(--accent); font: 400 14px var(--body); cursor: pointer; }
 .rv-photo { width: 100%; max-height: 420px; object-fit: contain; border-radius: 12px; background: var(--surface2); display: block; cursor: zoom-in; }
 .rv-photo[hidden] { display: none; }
+.rv-loading { padding: 24px; text-align: center; color: var(--hint); font-size: 14px; background: var(--surface2); border-radius: 12px; }
 .flist-add { display: flex; align-items: center; gap: 14px; padding: 13px 14px; color: var(--accent); font: 400 16px var(--body); background: none; border: 0; width: 100%; cursor: pointer; text-align: left; }
 .flist-add svg { width: 26px; height: 26px; stroke: var(--accent); fill: none; stroke-width: 1.8; flex: none; }
 .flist .empty { padding: 20px; }
@@ -1178,9 +1179,11 @@ function toggleReport(id) {
 function coachInboxItem(t, i) {
   if (t.status === 'reported') {
     const hidden = hiddenReports.has(t.id);
-    const photo = t.photo ? `
+    const src = photoSrc(t);
+    const photo = src === null ? '' : `
         <button class="rv-toggle" onclick="toggleReport('${t.id}')">${hidden ? 'Посмотреть отчёт' : 'Скрыть отчёт'}</button>
-        <img src="${t.photo}" class="rv-photo" alt="Отчёт" onclick="openPhoto('${t.id}')"${hidden ? ' hidden' : ''}>` : '';
+        ${src ? `<img src="${src}" class="rv-photo" alt="Отчёт" onclick="openPhoto('${t.id}')"${hidden ? ' hidden' : ''}>`
+              : (hidden ? '' : '<div class="rv-loading">Загружаю отчёт…</div>')}`;
     return taskRow(t, { num: i + 1, icon: '📸', right: `${t.fine} ₽`, sub: coachTimeMeta(t), extra: `${photo}
         <div class="rv-btns">
           <button class="btn btn-solid" onclick="reviewTask('${t.id}',true)">Принять</button>
@@ -1197,10 +1200,26 @@ function coachInboxItem(t, i) {
     right: `<button class="ok-btn" aria-label="Подтвердить" onclick="confirmTask('${t.id}')">✓</button>` });
 }
 
+// Фото отчёта: в задаче лежит само фото (старый формат) или id отдельного хранилища
+const photoCache = {}, photoLoading = new Set();
+function photoSrc(t) {
+  if (t.photo) return t.photo;
+  if (!t.photoId) return null;
+  if (photoCache[t.photoId]) return photoCache[t.photoId];
+  if (!photoLoading.has(t.photoId)) {
+    photoLoading.add(t.photoId);
+    api('/photo-get', { id: t.photoId }, 20000).then(r => {
+      if (r.ok && r.data?.data) { photoCache[t.photoId] = r.data.data; render(); }
+    }).catch(() => {}).finally(() => photoLoading.delete(t.photoId));
+  }
+  return '';
+}
+
 function openPhoto(id) {
   const t = S.tasks.find(t => t.id === id);
-  if (!t || !t.photo) return;
-  document.getElementById('photo-view-img').src = t.photo;
+  const src = t && photoSrc(t);
+  if (!src) return;
+  document.getElementById('photo-view-img').src = src;
   document.getElementById('photo-view').classList.add('open');
 }
 
@@ -1390,7 +1409,7 @@ const IMG_OPTS = { photo: { max: 400, budget: 60000 }, shot: { max: 1000, budget
 function compressImage(img, max, budget) {
   let scale = Math.min(1, max / Math.max(img.width, img.height));
   let q = 0.7, url = '';
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 20; i++) {
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
     const ctx = canvas.getContext('2d');
@@ -1429,20 +1448,28 @@ async function submitReport() {
   const t = S.tasks.find(t => t.id === id);
   if (!t) return;
 
-  // Сколько места осталось в документе без этого фото
-  writeBack();
-  const room = BIN_LIMIT - jsonBytes(DB) - 2000;
-  if (room < 12000) { toast('⚠️ Нет места для фото: тренеру нужно сначала проверить прошлые отчёты'); return; }
-  let photo = photoBase64;
-  if (photo.length > room && photoImg) {
-    const opts = IMG_OPTS[photoKind] || IMG_OPTS.photo;
-    photo = compressImage(photoImg, opts.max, room);
-  }
-
   const btn = document.getElementById('report-send');
   btn.disabled = true; btn.textContent = 'Отправляю…';
-  const prev = { status: t.status, photo: t.photo, reportedAt: t.reportedAt };
-  t.status = 'reported'; t.photo = photo; t.reportedAt = new Date().toISOString();
+
+  // Фото кладём в отдельное хранилище (свой лимит 100 КБ на каждое фото), в задаче — только id.
+  // Если воркер ещё старый — фото уходит в общий документ, пережатое под свободное место.
+  let photo = null, photoId = null;
+  try {
+    const r = await api('/photo', { data: photoBase64 }, 20000);
+    if (r.ok && r.data?.id) photoId = r.data.id;
+  } catch(e) {}
+  if (!photoId) {
+    writeBack();
+    const room = BIN_LIMIT - jsonBytes(DB) - 1500;
+    photo = photoBase64;
+    if (photo.length > room && photoImg) {
+      const opts = IMG_OPTS[photoKind] || IMG_OPTS.photo;
+      photo = compressImage(photoImg, Math.min(opts.max, 600), Math.max(room, 3000));
+    }
+  }
+
+  const prev = { status: t.status, photo: t.photo, photoId: t.photoId, reportedAt: t.reportedAt };
+  t.status = 'reported'; t.photo = photo; t.photoId = photoId; t.reportedAt = new Date().toISOString();
   const ok = await saveAndWait();
   btn.disabled = false; btn.textContent = 'Отправить тренеру';
   if (!ok) {
