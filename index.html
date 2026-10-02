@@ -183,6 +183,14 @@ body {
 .flist-add { display: flex; align-items: center; gap: 14px; padding: 13px 14px; color: var(--accent); font: 400 16px var(--body); background: var(--surface); border-radius: 14px; border: 0; width: 100%; cursor: pointer; text-align: left; }
 .flist-add svg { width: 26px; height: 26px; stroke: var(--accent); fill: none; stroke-width: 1.8; flex: none; }
 .flist .empty { padding: 20px; background: var(--surface); border-radius: 14px; }
+.auto-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; cursor: pointer; }
+.auto-row b { display: block; font-size: 15px; font-weight: 500; }
+.auto-row small { display: block; font-size: 13px; color: var(--hint); margin-top: 2px; line-height: 1.35; }
+.switch { appearance: none; -webkit-appearance: none; flex: none; width: 46px; height: 28px; border-radius: 14px; background: #3a4a5c; position: relative; cursor: pointer; transition: background 0.2s; margin: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.switch:checked { background: var(--orange); }
+.switch:checked::after { transform: translateX(18px); }
+.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .timer-strip { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; font-size: 14px; color: var(--hint); }
 .timer-strip b { color: var(--orange); font-weight: 500; }
 .btn-outline { grid-column: 2; grid-row: 1 / span 2; }
@@ -656,8 +664,34 @@ function maybeSuggestTimer() {
   }
 }
 
+// Автозапуск таймера бездействия (включает ученик): как только открытых задач не осталось
+const OPEN = ['pending', 'active', 'reported', 'overdue'];
+function maybeAutoStartTimer() {
+  if (!S.autoTimer || S.inactivityTimer?.active || S.tasks.some(t => OPEN.includes(t.status))) return false;
+  // отсчёт — с момента, когда закрылась последняя задача (но не раньше включения автозапуска)
+  const T = x => x ? new Date(x).getTime() : 0;
+  const lastDone = Math.max(0, ...S.tasks.map(t => Math.max(T(t.reviewedAt), T(t.doneAt), T(t.burnedAt))));
+  const prevStop = T(S.inactivityTimer?.stoppedAt);
+  const since = Math.max(lastDone, T(S.autoTimerSince), prevStop);
+  S.inactivityTimer = {
+    baseAmount: S.inactivityTimer?.baseAmount || 500,
+    startedAt: new Date(Math.min(Date.now(), since || Date.now())).toISOString(),
+    lastChargedAt: null, active: true, auto: true,
+  };
+  return true;
+}
+
+async function toggleAutoTimer() {
+  S.autoTimer = !S.autoTimer;
+  S.autoTimerSince = S.autoTimer ? new Date().toISOString() : null;
+  const started = maybeAutoStartTimer();
+  await save(); render();
+  toast(S.autoTimer ? (started ? '⏱ Автозапуск включён, таймер запущен' : '⏱ Автозапуск включён') : 'Автозапуск выключен');
+  if (started) notifyAll('⏱ Таймер бездействия запущен автоматически: открытых задач нет. Базовый штраф: ' + S.inactivityTimer.baseAmount + '₽');
+}
+
 function emptyBranch() {
-  return { debt: 0, tasks: [], payments: [], history: [], debtProposal: null, inactivityTimer: null };
+  return { debt: 0, tasks: [], payments: [], history: [], debtProposal: null, inactivityTimer: null, autoTimer: false, autoTimerSince: null };
 }
 
 function emptyDB() {
@@ -673,6 +707,8 @@ function normBranch(b) {
   ['tasks', 'payments', 'history'].forEach(k => { if (Array.isArray(b[k])) r[k] = b[k]; });
   if (b.debtProposal !== undefined) r.debtProposal = b.debtProposal;
   if (b.inactivityTimer !== undefined) r.inactivityTimer = b.inactivityTimer;
+  r.autoTimer = b.autoTimer === true;
+  r.autoTimerSince = b.autoTimerSince || null;
   return r;
 }
 
@@ -696,6 +732,7 @@ function buildView() {
     role: ME ? (ME === 'student' ? 'student' : 'coach') : null,
     debt: b.debt, tasks: b.tasks, payments: b.payments, history: b.history,
     debtProposal: b.debtProposal, inactivityTimer: b.inactivityTimer,
+    autoTimer: b.autoTimer === true, autoTimerSince: b.autoTimerSince || null,
     chatIds: { student: DB.chatIds.student, coach: DB.chatIds[BR] },
     names: { student: DB.names.student, coach: DB.names[BR] }
   };
@@ -1092,6 +1129,10 @@ let renderLock = false;
 function render() {
   if (renderLock || !ME) return;
   checkDeadlinesSync();
+  if (maybeAutoStartTimer()) {
+    save();
+    notifyAll('⏱ Таймер бездействия запущен автоматически: все задачи выполнены. Базовый штраф: ' + S.inactivityTimer.baseAmount + '₽');
+  }
   renderCoachSwitch();
   const two = registeredCoaches().length > 1;
   document.getElementById('debt-label').textContent = S.role === 'student'
@@ -1125,6 +1166,8 @@ function renderTasks() {
   // Таймер бездействия — тонкой строкой, только когда запущен
   const it = S.inactivityTimer;
   if (it && it.active) html += `<div class="card timer-strip">⏱ Таймер бездействия <b>запущен</b></div>`;
+  html += `<label class="card auto-row"><span><b>Автозапуск таймера бездействия</b><small>${S.autoTimer ? 'Таймер запустится сам, когда все задачи будут выполнены' : 'Выключен — таймер запускает тренер'}</small></span>
+    <input type="checkbox" class="switch" ${S.autoTimer ? 'checked' : ''} onchange="toggleAutoTimer()"></label>`;
 
   // Debt proposal for student
   if (S.debtProposal && S.debtProposal.from === 'coach') {
@@ -1502,6 +1545,7 @@ async function createTask() {
   let timerStopped = false;
   if (S.inactivityTimer && S.inactivityTimer.active) {
     S.inactivityTimer.active = false;
+    S.inactivityTimer.stoppedAt = new Date().toISOString();
     timerStopped = true;
     toast('✅ Задача создана! Таймер бездействия остановлен.');
   } else {
@@ -1874,8 +1918,10 @@ function renderTimerCard(role) {
     if (role === 'coach') {
       return `<div class="timer-card" id="timer-card">
         <div class="timer-status"><div class="timer-title">⏱ Таймер бездействия</div><span class="badge badge-burned">Не активен</span></div>
-        <div class="timer-inactive">Запусти таймер чтобы штрафовать за бездействие</div>
-        <button class="btn btn-orange" style="width:100%;margin-top:10px" id="start-timer-btn" onclick="openModal('m-timer')">▶ Запустить таймер</button>
+        ${S.autoTimer
+          ? '<div class="timer-inactive">Таймер запустится сам, когда все текущие задачи ученика будут выполнены</div>'
+          : `<div class="timer-inactive">Запусти таймер чтобы штрафовать за бездействие</div>
+        <button class="btn btn-orange" style="width:100%;margin-top:10px" id="start-timer-btn" onclick="openModal('m-timer')">▶ Запустить таймер</button>`}
       </div>`;
     } else {
       return `<div class="timer-card"><div class="timer-status"><div class="timer-title">⏱ Таймер бездействия</div><span class="badge badge-burned">Не активен</span></div></div>`;
@@ -1901,7 +1947,9 @@ function renderTimerCard(role) {
     nextChargeIn = diffH > 0 ? `Следующий штраф через ${diffH}ч ${diffM}м` : `Следующий штраф через ${diffM}м`;
   }
 
-  const stopBtn = role === 'coach' ? `<button class="btn btn-neutral" style="width:100%;margin-top:8px" onclick="stopInactivityTimer()">⏹ Остановить таймер</button>` : '';
+  const stopBtn = role !== 'coach' ? ''
+    : S.autoTimer ? '<div class="timer-info">Запущен автоматически — ученик включил автозапуск. Остановится, когда ученик создаст задачу.</div>'
+    : `<button class="btn btn-neutral" style="width:100%;margin-top:8px" onclick="stopInactivityTimer()">⏹ Остановить таймер</button>`;
 
   // Progress bar for timer
   let barPct, barColor, barLabel;
@@ -2040,7 +2088,7 @@ function timerEverStarted() {
 
 function showTutorial() {
   if (timerEverStarted() || S.role !== 'coach' || tutorialDismissed()) return;
-  if (!document.getElementById('tab-work')?.classList.contains('active')) return;
+  if (!document.getElementById('tab-work')?.classList.contains('active') || S.autoTimer) return;
   const btn = document.getElementById('start-timer-btn');
   if (!btn) { setTimeout(showTutorial, 300); return; }
 
