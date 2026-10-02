@@ -190,6 +190,62 @@ body {
 .btn-outline { background: none; border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px; font: 500 13px var(--body); cursor: pointer; white-space: nowrap; }
 .btn-outline:active { background: var(--surface2); }
 .btn-outline.danger { color: var(--red); }
+.modal.detail { max-height: 88vh; overflow-y: auto; position: relative; }
+.d-close { position: absolute; right: 14px; top: 12px; border: 0; background: rgba(255,255,255,0.07); color: var(--hint); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 15px; }
+.d-head { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 4px 0 14px; }
+.d-av { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 28px; font-weight: 700; color: #fff; }
+.d-name { font-size: 20px; font-weight: 700; color: var(--accent); overflow-wrap: anywhere; }
+.d-sub { font-size: 13.5px; color: var(--hint); }
+.d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.d-cell { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.d-cell span { display: block; font-size: 12px; color: var(--hint); }
+.d-cell b { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.d-sec { font-size: 13px; font-weight: 500; color: var(--hint); text-transform: uppercase; letter-spacing: 0.06em; margin: 4px 2px 8px; }
+.d-note { font-size: 13px; color: var(--hint); background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; line-height: 1.45; }
+.d-count { text-align: center; margin: 0 0 12px; }
+.d-count b { display: block; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.d-count span { font-size: 13px; color: var(--hint); }
+.verdict { border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: center; }
+.verdict .vi { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; }
+.verdict b { display: block; font-size: 16px; }
+.verdict span { font-size: 13px; color: var(--hint); }
+.bar2 { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; margin: 6px 0 4px; }
+.bar2 i { display: block; height: 100%; border-radius: 4px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: space-between; font-size: 12px; color: var(--hint); margin-bottom: 14px; }
+.tl { margin-bottom: 14px; }
+.tl-i { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; position: relative; padding-bottom: 14px; }
+.tl-i:last-child { padding-bottom: 0; }
+.tl-i::before { content: ""; position: absolute; left: 10px; top: 20px; bottom: 0; width: 2px; background: #33424f; }
+.tl-i:last-child::before { display: none; }
+.tl-i .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: #fff; font-weight: 700; }
+.tl-i.now .dot { box-shadow: 0 0 0 4px rgba(94,181,247,0.22); }
+.tl-i.todo .dot { background: transparent !important; border: 2px dashed #4a5b6d; color: #6f8194; }
+.tl-i.todo .tl-t, .tl-i.todo .tl-d { color: #6f8194; }
+.tl-t { font-size: 14.5px; }
+.tl-t small { display: block; font-size: 12.5px; color: var(--hint); margin-top: 1px; }
+.tl-d { font-size: 13px; color: var(--hint); font-variant-numeric: tabular-nums; text-align: right; }
+.kv { background: rgba(255,255,255,0.04); border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
+.kv div { display: flex; justify-content: space-between; gap: 12px; padding: 11px 12px; font-size: 14.5px; }
+.kv div + div { border-top: 1px solid var(--border); }
+.kv span { color: var(--hint); }
+.kv b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.d-acts { display: grid; gap: 8px; margin-top: 4px; }
+.d-acts.two { grid-template-columns: 1fr 1fr; }
+.d-acts .btn { width: 100%; padding: 12px; font-size: 15px; }
+.d-photo { width: 100%; max-height: 360px; object-fit: contain; border-radius: 12px; background: var(--surface2); display: block; margin-bottom: 14px; cursor: zoom-in; }
+/* История: переключатель, фильтры, платежи */
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border-radius: 12px; padding: 3px; margin-bottom: 8px; }
+.seg button { border: 0; background: none; color: var(--hint); font: 500 14px var(--body); padding: 8px; border-radius: 10px; cursor: pointer; }
+.seg button.on { background: var(--btn); color: #fff; }
+.chips { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 8px; scrollbar-width: none; }
+.chips button { border: 0; background: var(--surface); color: var(--hint); font: 500 13px var(--body); padding: 6px 12px; border-radius: 14px; white-space: nowrap; cursor: pointer; }
+.chips button.on { background: rgba(94,181,247,0.16); color: var(--accent); }
+.more-btn { display: block; width: 100%; border: 0; background: none; color: var(--accent); font: 500 14px var(--body); padding: 10px; cursor: pointer; }
+.pay-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+.pay-row .pn { color: var(--accent); font-size: 15px; overflow-wrap: anywhere; }
+.pay-row small { display: block; color: var(--hint); font-size: 12.5px; margin-top: 2px; }
+.pay-row .pa { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.t .n { cursor: pointer; }
 .photo-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 900; align-items: center; justify-content: center; padding: 16px; }
 .photo-view.open { display: flex; }
 .photo-view img { max-width: 100%; max-height: 100%; border-radius: 10px; }
@@ -428,6 +484,8 @@ body {
 </div>
 
 <!-- MODAL: ФОТО -->
+<div class="modal-overlay" id="m-detail"><div class="modal detail"><div class="modal-handle"></div><button class="d-close" onclick="closeDetail()" aria-label="Закрыть">✕</button><div id="detail-body"></div></div></div>
+
 <div class="modal-overlay" id="m-report">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -984,7 +1042,7 @@ function grpBox(color, title, count, inner, icon, act) {
 function taskRow(t, { icon, num, sub = '', right = '', bar = '', extra = '', color = '' }) {
   return `<div class="tcard"><div class="trow">
       <div class="av${num ? ' num' : ''}"${color ? ` style="background:${color}"` : ''}>${num || icon}</div>
-      <div class="t"><div class="n">«${t.name}»</div>${bar}${sub ? `<div class="s">${sub}</div>` : ''}</div>
+      <div class="t"><div class="n" role="button" tabindex="0" onclick="openTaskCard('${t.id}')">«${t.name}»</div>${bar}${sub ? `<div class="s">${sub}</div>` : ''}</div>
       <div class="r">${right}</div>
     </div>${extra ? `<div class="trow-extra">${extra}</div>` : ''}</div>`;
 }
@@ -1042,6 +1100,10 @@ function render() {
   if (S.role === 'student') { renderTasks(); renderStudentHistory(); }
   else { renderInbox(); renderWork(); renderAll(); }
   renderProgress();
+  if (detailId && document.getElementById('m-detail').classList.contains('open')) {
+    const t = S.tasks.find(t => t.id === detailId);
+    if (t) document.getElementById('detail-body').innerHTML = taskCardHTML(t); else closeDetail();
+  }
   const waiting = S.role === 'coach'
     ? S.tasks.filter(t => ['pending','reported','overdue'].includes(t.status)).length + (S.debtProposal?.from === 'student' ? 1 : 0)
     : 0;
@@ -1226,38 +1288,156 @@ function openPhoto(id) {
   document.getElementById('photo-view').classList.add('open');
 }
 
-// STUDENT HISTORY
-function renderStudentHistory() {
-  const el = document.getElementById('tab-history');
-  let html = '<div class="section-title">Все задачи</div>';
-  const finished = S.tasks.filter(t => ['done','failed','burned'].includes(t.status));
-  if (!finished.length) {
-    html += '<div class="empty"><div class="empty-icon">📋</div>Завершённых задач пока нет</div>';
-  } else {
-    const ICON = { done: ['✓','var(--green)'], failed: ['✗','#6f8194'], burned: ['—','#55606d'] };
-    html += '<div class="flist plain">' + finished.slice().reverse().map((t, i) => {
-      const [ic, c] = ICON[t.status];
-      const badge = { done: 'badge-done">Выполнено', failed: 'badge-failed">Провалено', burned: 'badge-burned">Сгорела' }[t.status];
-      return taskRow(t, { num: i + 1, icon: ic, color: c, sub: `${dlText(t, false)} · ${t.fine} ₽`, right: `<span class="badge ${badge}</span>` });
+// ИСТОРИЯ (общая для ученика и тренера): Задачи | Платежи, фильтр, «Показать ещё»
+const H_ST = { done: ['Выполнено', 'var(--green)', '✓', 'badge-done'], failed: ['Провалено', '#6f8194', '✗', 'badge-failed'], burned: ['Сгорела', '#55606d', '—', 'badge-burned'] };
+let histTab = 'tasks', histFilter = 'all', histShown = 3;
+function setHist(k, v) {
+  if (k === 'tab') histTab = v;
+  if (k === 'filter') { histFilter = v; histShown = 3; }
+  if (k === 'more') histShown += 10;
+  render();
+}
+function payInfo(h) {
+  const minus = h.type === 'paid';
+  return { minus, sign: minus ? '−' : '+', color: minus ? 'var(--green)' : 'var(--red)' };
+}
+function renderHistory(elId) {
+  const el = document.getElementById(elId);
+  let html = `<div class="seg"><button class="${histTab === 'tasks' ? 'on' : ''}" onclick="setHist('tab','tasks')">Задачи</button><button class="${histTab === 'pays' ? 'on' : ''}" onclick="setHist('tab','pays')">Платежи</button></div>`;
+  if (histTab === 'tasks') {
+    const finished = S.tasks.filter(t => H_ST[t.status]).slice().reverse();
+    const cnt = f => finished.filter(t => f === 'all' || t.status === f).length;
+    html += '<div class="chips">' + [['all', 'Все'], ['done', 'Выполнено'], ['failed', 'Провалено'], ['burned', 'Сгорело']]
+      .map(([k, l]) => `<button class="${histFilter === k ? 'on' : ''}" onclick="setHist('filter','${k}')">${l} · ${cnt(k)}</button>`).join('') + '</div>';
+    const list = finished.filter(t => histFilter === 'all' || t.status === histFilter);
+    if (!list.length) html += '<div class="empty">Здесь пока пусто</div>';
+    html += '<div class="flist plain">' + list.slice(0, histShown).map((t, i) => {
+      const [lbl, c, , cls] = H_ST[t.status];
+      return taskRow(t, { num: i + 1, color: c, sub: `${dlText(t, false)} · ${t.fine} ₽`, right: `<span class="badge ${cls}">${lbl}</span>` });
     }).join('') + '</div>';
-  }
-  html += '<div class="section-title" style="margin-top:16px">История платежей</div>';
-  if (!S.history.length) {
-    html += '<div class="empty" style="padding:20px"><div class="empty-icon">📜</div>История пуста</div>';
+    if (list.length > histShown) html += `<button class="more-btn" onclick="setHist('more')">Показать ещё ${Math.min(10, list.length - histShown)} из ${list.length - histShown}</button>`;
   } else {
-    html += '<div class="card">' + S.history.slice().reverse().map(h => {
-      let amtClass = 'hist-fine', amtStr = '−' + h.amount + '₽';
-      if (h.type === 'paid') { amtClass = 'hist-paid-student'; amtStr = '−' + h.amount + '₽'; }
-      return `<div class="hist-item">
-        <div class="hist-left">
-          <div class="hist-name">${h.name}</div>
-          <div class="hist-date">${new Date(h.date).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
-        <div class="hist-amount ${amtClass}">${amtStr}</div>
-      </div>`;
+    const pays = S.history.map((h, i) => [h, i]).reverse();
+    if (!pays.length) html += '<div class="empty">Платежей пока нет</div>';
+    html += '<div class="flist plain">' + pays.slice(0, histShown).map(([h, i]) => {
+      const p = payInfo(h);
+      return `<div class="tcard"><div class="pay-row" role="button" tabindex="0" onclick="openPayCard(${i})"><div><div class="pn">${h.name}</div><small>${deadlineStr(h.date)}</small></div><span class="pa" style="color:${p.color}">${p.sign}${h.amount} ₽</span></div></div>`;
     }).join('') + '</div>';
+    if (pays.length > histShown) html += `<button class="more-btn" onclick="setHist('more')">Показать ещё ${Math.min(10, pays.length - histShown)} из ${pays.length - histShown}</button>`;
   }
   el.innerHTML = html;
+}
+function renderStudentHistory() { renderHistory('tab-history'); }
+
+// ПОДРОБНАЯ КАРТОЧКА ЗАДАЧИ И ПЛАТЕЖА
+function dur(ms) {
+  ms = Math.abs(ms);
+  const d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000);
+  return [d ? d + ' д' : '', h ? h + ' ч' : '', !d && (m || !h) ? m + ' мин' : ''].filter(Boolean).join(' ');
+}
+const D_ST = {
+  pending:  ['Новая задача', 'var(--violet)', '⏳'], active: ['В работе', 'var(--teal)', '⏱'],
+  reported: ['На проверке', 'var(--yellow)', '📸'], overdue: ['Просрочена', 'var(--red)', '!'],
+  done: ['Выполнено', 'var(--green)', '✓'], failed: ['Провалено', '#6f8194', '✗'], burned: ['Сгорела', '#55606d', '—'],
+};
+let detailId = null;
+function closeDetail() { detailId = null; closeModal('m-detail'); }
+function act(fn, id) { closeDetail(); fn(id); }
+
+function steps(t) {
+  const isCoach = S.role === 'coach', T = x => new Date(x).getTime();
+  const out = [['Создана учеником', T(t.createdAt), 'var(--violet)', '+']];
+  if (t.confirmedAt) out.push(['Подтверждена тренером', T(t.confirmedAt), 'var(--teal)', '✓']);
+  if (t.reportedAt) out.push(['Отправлен отчёт', T(t.reportedAt), 'var(--yellow)', '📸']);
+  if (t.overdueAt) out.push(['Дедлайн прошёл без отчёта', T(t.overdueAt), 'var(--red)', '!']);
+  if (t.status === 'done') out.push(['Отчёт принят', T(t.doneAt || t.reviewedAt), 'var(--green)', '✓']);
+  if (t.status === 'failed') out.push([(t.reportedAt ? 'Отчёт отклонён' : 'Просрочка подтверждена') + ', штраф ' + t.fine + ' ₽', t.reviewedAt ? T(t.reviewedAt) : null, '#6f8194', '✗']);
+  if (t.status === 'burned') out.push(['Сгорела без штрафа', t.burnedAt ? T(t.burnedAt) : null, '#55606d', '—']);
+  // что дальше — для незавершённых
+  const todo = [];
+  if (t.status === 'pending') todo.push([isCoach ? 'Подтвердить' : 'Подтверждение тренером', 'now'], ['Отчёт ученика', 'todo']);
+  if (t.status === 'active') todo.push([isCoach ? 'Ученик выполняет' : 'Отправить отчёт', 'now', 'до ' + deadlineStr(t.deadline)], ['Проверка тренером', 'todo']);
+  if (t.status === 'reported') todo.push([isCoach ? 'Проверить отчёт' : 'Проверка тренером', 'now']);
+  if (t.status === 'overdue') todo.push([isCoach ? 'Решить: штраф или нет' : 'Решение тренера', 'now']);
+  let html = '<div class="tl">' + out.map(([n, at, c, i], k) => {
+    const prev = k ? out[k - 1][1] : null;
+    const sub = !k ? 'начало' : (at && prev ? 'через ' + dur(at - prev) : '');
+    return `<div class="tl-i"><span class="dot" style="background:${c}">${i}</span><div class="tl-t">${n}<small>${sub}</small></div><div class="tl-d">${at ? deadlineStr(at) : ''}</div></div>`;
+  }).join('');
+  html += todo.map(([n, cls, when]) => `<div class="tl-i ${cls}"><span class="dot" style="background:var(--accent)">${cls === 'now' ? '•' : ''}</span><div class="tl-t">${n}<small>${cls === 'now' ? 'сейчас' : 'дальше'}</small></div><div class="tl-d">${when || ''}</div></div>`).join('');
+  return html + '</div>';
+}
+
+function taskCardHTML(t) {
+  const [lbl, c, ic] = D_ST[t.status] || ['', 'var(--hint)', '•'];
+  const isCoach = S.role === 'coach', now = Date.now();
+  const dl = new Date(t.deadline).getTime(), conf = t.confirmedAt ? new Date(t.confirmedAt).getTime() : null;
+  let h = `<div class="d-head"><div class="d-av" style="background:${c}">${ic}</div><div class="d-name">«${t.name}»</div><div class="d-sub">${lbl} · штраф ${t.fine} ₽</div></div>`;
+  const tile = (k, v, style = '') => `<div class="d-cell"><span>${k}</span><b${style ? ` style="${style}"` : ''}>${v}</b></div>`;
+  const verdict = (col, icon, title, sub) => `<div class="verdict" style="background:color-mix(in srgb, ${col} 14%, transparent)"><span class="vi" style="background:${col}">${icon}</span><div><b>${title}</b><span>${sub}</span></div></div>`;
+  let acts = '';
+
+  if (t.status === 'active') {
+    const pct = conf ? Math.min(100, Math.max(0, (now - conf) / (dl - conf) * 100)) : 0;
+    h += `<div class="d-count"><b style="color:${pct >= 80 ? 'var(--red)' : 'var(--text)'}" data-left="${t.deadline}">${timeLeft(t.deadline) || 'время вышло'}</b><span>осталось до дедлайна · ${deadlineStr(t.deadline)}</span></div>
+      <div class="bar2"><i style="width:${pct}%;background:${pct >= 80 ? 'var(--red)' : 'var(--neutral)'}"></i></div>
+      <div class="legend"><span>подтверждена ${conf ? deadlineStr(conf) : '—'}</span><span>прошло ${Math.round(pct)}% срока</span></div>
+      <div class="d-grid">${tile('Срок на задачу', conf ? dur(dl - conf) : '—')}${tile('Если не успеть', '+' + t.fine + ' ₽', 'color:var(--red)')}</div>`;
+    if (!isCoach) acts = `<div class="d-acts"><button class="btn btn-primary" onclick="act(openReport,'${t.id}')">📸 Отправить отчёт</button><button class="btn btn-neutral" onclick="act(pokeCoach)">🔔 Написать тренеру</button></div>`;
+  } else if (t.status === 'pending') {
+    h += `<div class="d-note">${isCoach ? 'Ученик создал задачу' : 'Задача создана'} ${dur(now - new Date(t.createdAt).getTime())} назад. После подтверждения запустится отсчёт до дедлайна.</div>
+      <div class="d-grid">${tile('Дедлайн', deadlineStr(t.deadline))}${tile('Будет на выполнение', dl > now ? dur(dl - now) : 'время вышло')}${tile('Штраф', t.fine + ' ₽')}</div>`;
+    if (isCoach) acts = `<div class="d-acts"><button class="btn btn-primary" onclick="act(confirmTask,'${t.id}')">✓ Подтвердить задачу</button></div>`;
+  } else if (t.status === 'reported') {
+    const margin = dl - new Date(t.reportedAt).getTime();
+    h += verdict(margin >= 0 ? 'var(--green)' : 'var(--red)', margin >= 0 ? '✓' : '!', margin >= 0 ? 'Сдано за ' + dur(margin) + ' до дедлайна' : 'Сдано на ' + dur(margin) + ' позже дедлайна', 'Отчёт отправлен ' + deadlineStr(t.reportedAt));
+    const src = photoSrc(t);
+    if (src) h += `<img class="d-photo" src="${src}" alt="Отчёт" onclick="openPhoto('${t.id}')">`;
+    else if (src === '') h += '<div class="rv-loading" style="margin-bottom:14px">Загружаю отчёт…</div>';
+    if (isCoach) acts = `<div class="d-acts two"><button class="btn btn-solid" onclick="act(id => reviewTask(id, true),'${t.id}')">Принять</button><button class="btn btn-neutral" onclick="act(id => reviewTask(id, false),'${t.id}')">Отклонить</button></div>`;
+  } else if (t.status === 'overdue') {
+    const expiry = new Date(new Date(t.overdueAt || t.deadline).getTime() + 12 * 3600000).toISOString();
+    h += verdict('var(--red)', '!', 'Дедлайн пропущен', 'Тренер решает до ' + deadlineStr(expiry) + ' — иначе задача сгорит без штрафа');
+    if (isCoach) acts = `<div class="d-acts"><button class="btn btn-neutral" style="background:rgba(239,91,91,0.14);color:var(--red)" onclick="act(confirmOverdue,'${t.id}')">Начислить штраф ${t.fine} ₽</button></div>`;
+  } else {
+    // завершённые: итог + цифры
+    const rep = t.reportedAt ? new Date(t.reportedAt).getTime() : null;
+    const v = t.status === 'done'
+      ? ['var(--green)', '✓', rep ? (dl >= rep ? 'Сдано за ' + dur(dl - rep) + ' до дедлайна' : 'Сдано после дедлайна') : 'Выполнено', 'Отчёт принят, штраф не начислен']
+      : t.status === 'failed'
+        ? ['#6f8194', '✗', t.reportedAt ? 'Отчёт отклонён' : 'Дедлайн пропущен', 'Начислен штраф ' + t.fine + ' ₽']
+        : ['#55606d', '—', 'Задача сгорела', 'Решения не было, штраф не начислен'];
+    h += verdict(...v);
+    const review = t.reviewedAt || t.doneAt;
+    h += `<div class="d-grid">${tile('Срок на задачу', conf ? dur(dl - conf) : '—')}${tile(t.status === 'failed' ? 'Начислен штраф' : 'Ставка штрафа', (t.status === 'failed' ? '+' : '') + t.fine + ' ₽', t.status === 'failed' ? 'color:var(--red)' : '')}${tile('Тренер подтвердил за', conf ? dur(conf - new Date(t.createdAt).getTime()) : '—')}${tile(t.status === 'done' ? 'Проверка заняла' : 'Решение тренера', review && rep ? dur(new Date(review).getTime() - rep) : review ? deadlineStr(review) : '—')}</div>`;
+    if (rep && conf) {
+      const pos = Math.min(100, Math.max(0, (rep - conf) / (dl - conf) * 100));
+      h += `<div class="d-sec">Когда сдан отчёт</div><div class="bar2"><i style="width:${pos}%;background:${v[0]}"></i></div><div class="legend"><span>подтверждена ${deadlineStr(conf)}</span><span>дедлайн ${deadlineStr(dl)}</span></div>`;
+    }
+  }
+  h += '<div class="d-sec">Как шла задача</div>' + steps(t) + acts;
+  return h;
+}
+
+function openTaskCard(id) {
+  const t = S.tasks.find(t => t.id === id);
+  if (!t) return;
+  detailId = id;
+  document.getElementById('detail-body').innerHTML = taskCardHTML(t);
+  openModal('m-detail');
+}
+function openPayCard(i) {
+  const h = S.history[i];
+  if (!h) return;
+  const p = payInfo(h);
+  const task = h.taskId && S.tasks.find(t => t.id === h.taskId);
+  const rows = [['За что', h.reason || h.name], ['Когда', deadlineStr(h.date)]];
+  if (h.debtBefore != null) rows.push(['Долг до', h.debtBefore + ' ₽'], ['Долг после', h.debtAfter + ' ₽']);
+  detailId = null;
+  document.getElementById('detail-body').innerHTML = `<div class="d-head"><div class="d-av" style="background:${p.color}">₽</div><div class="d-name" style="color:${p.color}">${p.sign}${h.amount} ₽</div><div class="d-sub">${h.name}</div></div>
+    <div class="kv">${rows.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
+    ${task ? `<div class="d-acts"><button class="btn btn-green" onclick="openTaskCard('${task.id}')">Открыть задачу «${task.name}»</button></div>` : ''}`;
+  openModal('m-detail');
 }
 
 // COACH INBOX: только то, что ждёт решения тренера
@@ -1307,56 +1487,8 @@ function renderWork() {
   if (!timerEverStarted() && S.role === 'coach') setTimeout(showTutorial, 150);
 }
 
-// COACH ALL TASKS
-function renderAll() {
-  const el = document.getElementById('tab-all');
-  let html = '';
-
-  html += '<div class="section-title">История</div>';
-  if (!S.history.length) {
-    html += '<div class="empty" style="padding:20px"><div class="empty-icon">📜</div>История пуста</div>';
-  } else {
-    html += '<div class="card">';
-    html += S.history.slice().reverse().map(h => {
-      let amtClass = 'hist-fine', amtStr = h.amount + '₽';
-      if (h.type === 'earned') { amtClass = 'hist-earned'; amtStr = '+' + h.amount + '₽'; }
-      if (h.type === 'paid') { amtClass = 'hist-paid-student'; amtStr = '−' + h.amount + '₽'; }
-      return `<div class="hist-item">
-        <div class="hist-left">
-          <div class="hist-name">${h.name}</div>
-          <div class="hist-date">${new Date(h.date).toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
-        <div class="hist-amount ${amtClass}">${amtStr}</div>
-      </div>`;
-    }).join('');
-    html += '</div>';
-  }
-
-  html += '<div class="section-title" style="margin-top:16px">Задачи</div>';
-  if (!S.tasks.length) {
-    html += '<div class="empty"><div class="empty-icon">📋</div>Ученик ещё не создал задач</div>';
-  } else {
-    const badgesAll = {
-      pending: '<span class="badge badge-wait">⏳ Ждёт подтверждения</span>',
-      active: '<span class="badge badge-active">● Активна</span>',
-      reported: '<span class="badge badge-reported">📸 На проверке</span>',
-      overdue: '<span class="badge badge-late">⚠ Просрочена</span>',
-      done: '<span class="badge badge-done">✓ Выполнено</span>',
-      failed: '<span class="badge badge-failed">✗ Провалено</span>',
-      burned: '<span class="badge badge-burned">— Сгорела</span>',
-    };
-    const ICON = { pending: ['⏳','var(--violet)'], active: ['⏱','var(--teal)'], reported: ['📸','var(--yellow)'], overdue: ['!','var(--red)'],
-      done: ['✓','var(--green)'], failed: ['✗','#6f8194'], burned: ['—','#55606d'] };
-    html += '<div class="flist plain">' + S.tasks.slice().reverse().map((t, i) => {
-      const [ic, c] = ICON[t.status] || ['•', 'var(--hint)'];
-      return taskRow(t, { num: i + 1, icon: ic, color: c, right: badgesAll[t.status] || '',
-        bar: t.status === 'active' ? timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до') : '',
-        sub: t.status === 'active' ? '' : coachTimeMeta(t) });
-    }).join('') + '</div>';
-  }
-
-  el.innerHTML = html;
-}
+// COACH HISTORY
+function renderAll() { renderHistory('tab-all'); }
 
 // ACTIONS
 async function createTask() {
@@ -1494,13 +1626,14 @@ async function reviewTask(id, ok) {
   if (!t) return;
   t.photo = null;
   if (ok) {
-    t.status = 'done'; t.doneAt = new Date().toISOString();
+    t.status = 'done'; t.doneAt = t.reviewedAt = new Date().toISOString();
     toast('✅ Отчёт принят!');
     notifyAll('✅ ' + roleName('coach') + ' принял(а) отчёт: ' + t.name + '\nЗадача выполнена!');
   } else {
-    t.status = 'failed';
+    t.status = 'failed'; t.reviewedAt = new Date().toISOString();
+    const before = S.debt;
     S.debt += t.fine;
-    S.history.push({ type: 'earned', name: t.name, amount: t.fine, date: new Date().toISOString() });
+    S.history.push({ type: 'earned', name: t.name, amount: t.fine, date: t.reviewedAt, taskId: t.id, reason: 'Отчёт отклонён тренером', debtBefore: before, debtAfter: S.debt });
     toast(`Штраф ${t.fine}₽ начислен`);
     notifyAll('❌ ' + roleName('coach') + ' отклонил(а) отчёт: ' + t.name + '\nШтраф ' + t.fine + '₽ начислен. Долг ученика: ' + S.debt + '₽');
   }
@@ -1511,9 +1644,10 @@ async function reviewTask(id, ok) {
 async function confirmOverdue(id) {
   const t = S.tasks.find(t => t.id === id);
   if (!t) return;
-  t.status = 'failed';
+  t.status = 'failed'; t.reviewedAt = new Date().toISOString();
+  const before = S.debt;
   S.debt += t.fine;
-  S.history.push({ type: 'earned', name: t.name + ' (просрочено)', amount: t.fine, date: new Date().toISOString() });
+  S.history.push({ type: 'earned', name: t.name + ' (просрочено)', amount: t.fine, date: t.reviewedAt, taskId: t.id, reason: 'Просрочка подтверждена тренером', debtBefore: before, debtAfter: S.debt });
   await save(); render(); toast(`Просрочка подтверждена. Штраф ${t.fine}₽`);
   notifyAll('⚠️ ' + roleName('coach') + ' зафиксировал(а) просрочку: ' + t.name + '\nШтраф ' + t.fine + '₽ добавлен к долгу. Долг ученика: ' + S.debt + '₽');
   maybeSuggestTimer();
@@ -1549,7 +1683,9 @@ async function confirmDebt(ok) {
       type: diff < 0 ? 'paid' : 'earned',
       name: 'Изменение долга' + (S.debtProposal.comment ? ': ' + S.debtProposal.comment : ''),
       amount: Math.abs(diff),
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      reason: diff < 0 ? 'Долг уменьшен по согласию сторон' : 'Долг увеличен по согласию сторон',
+      debtBefore: old, debtAfter: S.debt
     });
     toast(`✅ Долг изменён на ${S.debtProposal.newDebt}₽`);
     notifyAll('✅ Изменение долга подтверждено. Новый долг: ' + S.debtProposal.newDebt + '₽');
@@ -1819,8 +1955,9 @@ function checkInactivityTimer() {
 
   // First charge at 48h
   if (!t.lastChargedAt && hoursElapsed >= 48) {
+    const before = S.debt;
     S.debt += t.baseAmount;
-    S.history.push({ type: 'fine', name: 'Штраф за бездействие (48ч)', amount: t.baseAmount, date: now.toISOString() });
+    S.history.push({ type: 'fine', name: 'Штраф за бездействие (48ч)', amount: t.baseAmount, date: now.toISOString(), reason: 'Ученик не создал задачу за 48 часов', debtBefore: before, debtAfter: S.debt });
     S.inactivityTimer.lastChargedAt = now.toISOString();
     save(); render();
     notifyAll('⏱ Штраф за бездействие: ученик не создал задачу за 48 часов.\n+' + t.baseAmount + '₽ к долгу. Долг ученика: ' + S.debt + '₽');
@@ -1830,8 +1967,9 @@ function checkInactivityTimer() {
   // Every 12h after: +10% of base
   if (hoursSinceLast >= 12) {
     const charge = Math.round(t.baseAmount * 0.1);
+    const before = S.debt;
     S.debt += charge;
-    S.history.push({ type: 'fine', name: 'Штраф за бездействие (+10%)', amount: charge, date: now.toISOString() });
+    S.history.push({ type: 'fine', name: 'Штраф за бездействие (+10%)', amount: charge, date: now.toISOString(), reason: 'Ещё 12 часов без задач', debtBefore: before, debtAfter: S.debt });
     S.inactivityTimer.lastChargedAt = now.toISOString();
     save(); render();
     notifyAll('⏱ Штраф за бездействие (+10%): ещё 12 часов без задач.\n+' + charge + '₽ к долгу. Долг ученика: ' + S.debt + '₽');
@@ -1857,7 +1995,7 @@ function checkDeadlinesSync() {
     if (t.status === 'overdue' && t.overdueAt) {
       const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000);
       if (now > expiry) {
-        t.status = 'burned'; changed = true;
+        t.status = 'burned'; t.burnedAt = t.burnedAt || now.toISOString(); changed = true;
         if (!t.burnedNotified) {
           t.burnedNotified = true;
           notifyAll('🔥 Задача сгорела без штрафа: ' + t.name + '\nТренер не подтвердил просрочку за 12 часов.');
@@ -1865,7 +2003,7 @@ function checkDeadlinesSync() {
       }
     }
     if (t.status === 'pending' && new Date(t.deadline) < now) {
-      t.status = 'burned'; changed = true;
+      t.status = 'burned'; t.burnedAt = t.burnedAt || now.toISOString(); changed = true;
       if (!t.burnedNotified) {
         t.burnedNotified = true;
         notifyAll('🔥 Задача сгорела: ' + t.name + '\nТренер не подтвердил её до дедлайна.');
