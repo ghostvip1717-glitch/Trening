@@ -22,6 +22,15 @@
   --text: #eeeef5;
   --muted: #55556a;
   --neutral: #a0a0c0;
+  --teal: #2dd4bf;
+  /* Подобрано в макете */
+  --nm-size: 20.5px; --nm-color: #4278ff;
+  --lbl-size: 12.5px; --lbl-color: #ffff00;
+  --sep: 100%; --sep-gap: 9px;
+  --gh-size: 18.5px; --st-size: 18px; --st-color: #ffffff;
+  --mt-size: 12px; --mt-color: #ffffff;
+  --fn-size: 18px; --fn-color: #a0a0c0;
+  --frame: 55%; --frame-bg: 8%;
   --violet: #9a8cff;
   --display: 'Unbounded', sans-serif;
   --body: 'Inter', sans-serif;
@@ -92,13 +101,16 @@ body {
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 50; }
 .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0; cursor: pointer; border: none; background: none; color: var(--muted); font-size: 10px; font-family: var(--body); transition: color 0.15s; }
 .nav-btn.active { color: var(--accent); }
-.nav-icon { font-size: 20px; }
+.nav-icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nav-btn { position: relative; }
+.nav-count { position: absolute; top: 5px; left: calc(50% + 6px); min-width: 16px; height: 16px; border-radius: 8px; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+.nav-count:empty { display: none; }
 
 /* CARDS */
 .card { background: var(--surface); border: 1px solid var(--edge); border-radius: 12px; padding: 15px 16px; margin-bottom: 10px; }
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
 .card-name { font-size: 14px; font-weight: 600; flex: 1; margin-right: 8px; line-height: 1.3; }
-.card-fine { font-size: 13px; font-weight: 500; color: var(--neutral); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.card-fine { font-size: var(--fn-size); font-weight: 500; color: var(--fn-color); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .card-deadline { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 
 /* Coach time meta — one quiet line, key value highlighted */
@@ -113,9 +125,10 @@ body {
 .progress-fill.ok { background: var(--neutral); }
 .progress-fill.late { background: var(--red); }
 .progress-time { font-size: 12px; color: var(--neutral); font-variant-numeric: tabular-nums; }
-.progress-time b { color: var(--text); font-weight: 500; }
-.progress-time.warn b { color: var(--red); }
-.inbox-row .progress-wrap { grid-column: 1 / -1; margin: 6px 0 0; }
+.progress-time { font-size: var(--mt-size); color: var(--mt-color); }
+.progress-time.warn .fld:first-child b { color: var(--red); }
+.inbox-row .progress-wrap { grid-column: 1 / -1; margin: 8px 0 0; }
+.inbox-row .progress-bar { margin-bottom: var(--sep-gap); }
 .inbox-row .progress-bar { height: 3px; }
 
 /* BADGES */
@@ -132,6 +145,31 @@ body {
 .card-actions { display: flex; gap: 8px; margin-top: 10px; }
 
 .inbox-group { margin-bottom: 18px; }
+/* Цветная группа: заголовок и задачи в одной рамке цвета статуса */
+.grp { border: 1px solid var(--edge); border: 1px solid color-mix(in srgb, var(--c) var(--frame), transparent); border-radius: 14px; background: var(--surface); overflow: hidden; margin-bottom: 14px; }
+.grp-head { display: flex; align-items: center; gap: 8px; font-size: var(--gh-size); font-weight: 600; color: var(--c); padding: 10px 14px 9px; background: color-mix(in srgb, var(--c) var(--frame-bg), transparent); border-bottom: 1px solid var(--border); border-bottom: 1px solid color-mix(in srgb, var(--c) 30%, transparent); }
+.grp-head .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none; }
+.grp-head .cnt { color: var(--muted); font-weight: 500; }
+.grp-head .inbox-bulk { font-size: 13px; white-space: nowrap; }
+.grp .timer-card { border: 0; margin: 0; background: none; border-radius: 0; }
+.grp .timer-title { display: none; }
+.timer-strip { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; font-size: 13px; color: var(--neutral); border-color: var(--orange); }
+.timer-strip b { color: var(--orange); font-weight: 600; }
+/* Поля карточки: «Задача ученика: «…»», «Дедлайн: …» */
+.nm { font-size: var(--nm-size); font-weight: 500; color: var(--nm-color); min-width: 0; line-height: 1.3; }
+.nm .q::before { content: "«"; } .nm .q::after { content: "»"; }
+.lbl { font-size: var(--lbl-size); color: var(--lbl-color); font-weight: 500; margin-right: 2px; }
+.mt { grid-column: 1; font-size: var(--mt-size); color: var(--mt-color); font-variant-numeric: tabular-nums; padding-top: var(--sep-gap); margin-top: var(--sep-gap); border-top: 1px dashed color-mix(in srgb, var(--edge) var(--sep), transparent); }
+.mt b, .progress-time .fld b { color: var(--mt-color); font-weight: 500; }
+.mt b.late { color: var(--red); }
+.fld + .fld { margin-top: 2px; }
+.mt b[data-left] { white-space: nowrap; }
+.inbox-row > .row-extra { grid-column: 1 / -1; margin-top: 10px; display: grid; gap: 10px; }
+.inbox-row > .btn-outline, .inbox-row > .badge { grid-column: 2; grid-row: 1 / span 2; }
+.inbox-row > .card-fine { grid-column: 2; grid-row: 1; align-self: start; }
+.rv-toggle { justify-self: start; background: none; border: 0; padding: 0; color: var(--yellow); font: 500 13px var(--body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.rv-photo { width: 100%; max-height: 420px; object-fit: contain; border-radius: 10px; border: 1px solid var(--edge); background: var(--surface2); display: block; cursor: zoom-in; }
+.rv-photo[hidden] { display: none; }
 .inbox-group-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; margin: 0 4px 6px; }
 .inbox-group-head .cnt { color: var(--muted); font-weight: 500; }
 .inbox-type-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
@@ -203,7 +241,7 @@ body {
 .hist-paid-student { color: var(--neutral); }
 .hist-earned { color: var(--green); }
 
-.section-title { font-family: var(--display); font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; margin-top: 4px; }
+.section-title { font-family: var(--display); font-size: var(--st-size); font-weight: 600; color: var(--st-color); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; margin-top: 4px; }
 .empty { text-align: center; padding: 36px 20px; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .empty-icon { font-size: 32px; margin-bottom: 8px; }
 
@@ -353,16 +391,21 @@ body {
     <div class="tab-pane" id="tab-tasks"></div>
     <div class="tab-pane" id="tab-history"></div>
     <div class="tab-pane" id="tab-inbox"></div>
+    <div class="tab-pane" id="tab-work"></div>
+    <div class="tab-pane" id="tab-progress"></div>
     <div class="tab-pane" id="tab-all"></div>
   </div>
 
   <nav class="bottom-nav" id="nav-student" style="display:none">
-    <button class="nav-btn" onclick="switchTab('tasks','nav-student',this)"><span class="nav-icon">📋</span>Задачи</button>
-    <button class="nav-btn" onclick="switchTab('history','nav-student',this)"><span class="nav-icon">📜</span>История</button>
+    <button class="nav-btn" onclick="switchTab('tasks','nav-student',this)"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6"/></svg>Задачи</button>
+    <button class="nav-btn" onclick="switchTab('progress','nav-student',this)"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Прогресс</button>
+    <button class="nav-btn" onclick="switchTab('history','nav-student',this)"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></svg>История</button>
   </nav>
   <nav class="bottom-nav" id="nav-coach" style="display:none">
-    <button class="nav-btn" onclick="switchTab('inbox','nav-coach',this)"><span class="nav-icon">🏠</span>Главная</button>
-    <button class="nav-btn" onclick="switchTab('all','nav-coach',this)"><span class="nav-icon">📋</span>Задачи</button>
+    <button class="nav-btn" onclick="switchTab('inbox','nav-coach',this)"><span class="nav-count" id="inbox-count"></span><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 13l3-8h10l3 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/></svg>Входящие</button>
+    <button class="nav-btn" onclick="switchTab('work','nav-coach',this)"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>В работе</button>
+    <button class="nav-btn" onclick="switchTab('progress','nav-coach',this)"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Прогресс</button>
+    <button class="nav-btn" onclick="switchTab('all','nav-coach',this)"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></svg>История</button>
   </nav>
 
   <button class="btn-fab" id="fab" onclick="openModal('m-task')" style="display:none">＋</button>
@@ -888,6 +931,9 @@ function switchTab(name, navId, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   document.querySelectorAll('#' + navId + ' .nav-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  document.getElementById('fab').style.display = S.role === 'student' && name === 'tasks' ? 'flex' : 'none';
+  document.querySelector('.tab-content').scrollTop = 0;
+  if (name === 'work') setTimeout(showTutorial, 150);
 }
 
 // TIMERS
@@ -923,8 +969,19 @@ function timerHTML(startAt, deadline, label) {
 }
 
 function countdownText(label, left, end) {
-  return (left ? 'осталось <b>' + left + '</b>' : '<b>время вышло</b>') + ' · ' + label + ' ' + deadlineStr(end);
+  return fld('Осталось', left || 'время вышло') + fld(label, deadlineStr(end));
 }
+
+// Поле карточки: жёлтая подпись + значение
+function fld(label, value) { return `<div class="fld"><span class="lbl">${label}:</span> <b>${value}</b></div>`; }
+function taskName(t) { return `<div class="nm"><span class="lbl">Задача ученика:</span> <span class="q">${t.name}</span></div>`; }
+function grpBox(color, title, count, inner, extraHead) {
+  return `<div class="grp" style="--c:${color}">
+    <div class="grp-head"><span class="dot"></span>${title}${count != null ? ` <span class="cnt">${count}</span>` : ''}${extraHead || ''}</div>
+    ${inner}
+  </div>`;
+}
+function rowsBox(rows) { return `<div class="grp-list">${rows.join('')}</div>`; }
 
 // Посекундное обновление таймеров без полной перерисовки
 function tickCountdowns() {
@@ -948,12 +1005,11 @@ function deadlineStr(dl) {
   return new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 }
 
-// Для тренера: дедлайн и время отчёта одной строкой
+// Для тренера: дедлайн и время отчёта — поля карточки
 function coachTimeMeta(t) {
   const over = new Date(t.deadline) < new Date() && !['done','failed','burned'].includes(t.status);
-  let html = `дедлайн <b${over && !t.reportedAt ? ' class="late"' : ''}>${deadlineStr(t.deadline)}</b>`;
-  if (t.reportedAt) html = `ответ <b>${deadlineStr(t.reportedAt)}</b> · дедлайн ${deadlineStr(t.deadline)}`;
-  return `<div class="time-meta">${html}</div>`;
+  const dl = over && !t.reportedAt ? `<span class="late">${deadlineStr(t.deadline)}</span>` : deadlineStr(t.deadline);
+  return `<div class="mt">${t.reportedAt ? fld('Ответ', deadlineStr(t.reportedAt)) : ''}${fld('Дедлайн', dl)}</div>`;
 }
 
 // RENDER
@@ -969,19 +1025,28 @@ function render() {
     : 'Долг ученика';
   document.getElementById('debt-number').textContent = S.debt;
   if (S.role === 'student') { renderTasks(); renderStudentHistory(); }
-  else { renderInbox(); renderAll(); }
+  else { renderInbox(); renderWork(); renderAll(); }
+  renderProgress();
+  const waiting = S.role === 'coach'
+    ? S.tasks.filter(t => ['pending','reported','overdue'].includes(t.status)).length + (S.debtProposal?.from === 'student' ? 1 : 0)
+    : 0;
+  const cnt = document.getElementById('inbox-count');
+  if (cnt) cnt.textContent = waiting || '';
+}
+
+// ПРОГРЕСС: норма за 7 дней и календарь (общая вкладка)
+function renderProgress() {
+  document.getElementById('tab-progress').innerHTML = renderQuotaCard() + renderMiniCalendar();
 }
 
 // STUDENT TASKS
 function renderTasks() {
   const el = document.getElementById('tab-tasks');
-  const active = S.tasks.filter(t => ['pending','active','reported','overdue'].includes(t.status));
-  let html = '<div class="section-title">Мои задачи</div>';
+  let html = '';
 
-  // Кнопка «Уведомить тренера»
-  html += `<button class="btn btn-primary" style="margin-bottom:12px" onclick="pokeCoach()">🔔 Написать тренеру</button>`;
-
-  html += renderQuotaCard();
+  // Таймер бездействия — тонкой строкой, только когда запущен
+  const it = S.inactivityTimer;
+  if (it && it.active) html += `<div class="card timer-strip">⏱ Таймер бездействия <b>запущен</b></div>`;
 
   // Debt proposal for student
   if (S.debtProposal && S.debtProposal.from === 'coach') {
@@ -996,15 +1061,33 @@ function renderTasks() {
     </div>`;
   }
 
-  html += renderMiniCalendar();
-  html += renderTimerCard('student');
+  html += `<button class="btn btn-primary" style="margin-bottom:14px" onclick="pokeCoach()">🔔 Написать тренеру</button>`;
 
-  if (!active.length) {
+  const by = st => S.tasks.filter(t => t.status === st);
+  const active = by('active').sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+  if (active.length) html += grpBox('var(--teal)', 'В работе', active.length, rowsBox(active.map(t => `<div class="inbox-row">
+      ${taskName(t)}<div class="card-fine">${t.fine} ₽</div>
+      ${timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'Дедлайн')}
+      <div class="row-extra"><button class="btn btn-green" onclick="openReport('${t.id}')">📸 Отправить отчёт</button></div>
+    </div>`)));
+  const overdue = by('overdue');
+  if (overdue.length) html += grpBox('var(--red)', 'Просрочено', overdue.length, rowsBox(overdue.map(t => {
+      const expiry = new Date(new Date(t.overdueAt || t.deadline).getTime() + 12*3600000).toISOString();
+      return `<div class="inbox-row">${taskName(t)}<div class="card-fine">${t.fine} ₽</div>
+        <div class="mt">${fld('Дедлайн', deadlineStr(t.deadline))}${fld('Тренер решает до', deadlineStr(expiry))}</div></div>`;
+    })));
+  const reported = by('reported');
+  if (reported.length) html += grpBox('var(--yellow)', 'На проверке у тренера', reported.length, rowsBox(reported.map(t =>
+      `<div class="inbox-row">${taskName(t)}<div class="card-fine">${t.fine} ₽</div>
+        <div class="mt">${t.reportedAt ? fld('Отправлено', deadlineStr(t.reportedAt)) : ''}${fld('Дедлайн', deadlineStr(t.deadline))}</div></div>`)));
+  const pending = by('pending');
+  if (pending.length) html += grpBox('var(--violet)', 'Ждут подтверждения', pending.length, rowsBox(pending.map(t =>
+      `<div class="inbox-row">${taskName(t)}<div class="card-fine">${t.fine} ₽</div>
+        <div class="mt">${fld('Дедлайн', deadlineStr(t.deadline))}</div></div>`)));
+
+  if (!active.length && !overdue.length && !reported.length && !pending.length) {
     html += '<div class="empty"><div class="empty-icon">📋</div>Нет активных задач.<br>Нажми + чтобы создать.</div>';
-  } else {
-    html += active.map(t => taskCard(t, 'student')).join('');
   }
-
   el.innerHTML = html;
 }
 
@@ -1021,11 +1104,11 @@ function taskCard(t, role) {
 
   let timer = '';
   if (t.status === 'active') {
-    timer = timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до');
+    timer = timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'Дедлайн');
   }
   if (t.status === 'overdue' && t.overdueAt) {
     const expiry = new Date(new Date(t.overdueAt).getTime() + 12*3600000).toISOString();
-    timer = timerHTML(t.overdueAt, expiry, 'тренер решает до');
+    timer = timerHTML(t.overdueAt, expiry, 'Тренер решает до');
   }
 
   let actions = '';
@@ -1059,8 +1142,8 @@ function taskCard(t, role) {
   if (t.status === 'active') badges.active = '';
 
   return `<div class="card">
-    <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-    ${timeBlock}
+    <div class="card-top">${taskName(t)}<div class="card-fine">${t.fine} ₽</div></div>
+    ${t.status === 'active' ? '' : `<div class="mt" style="margin-bottom:8px">${fld('Дедлайн', deadlineStr(t.deadline))}</div>`}
     ${photoHtml}${timer}${badges[t.status]||''}${actions}
   </div>`;
 }
@@ -1130,38 +1213,46 @@ function renderQuotaCard() {
 // Тип входящей задачи для тренера: у каждого статуса свой цвет точки
 const INBOX_TYPE = {
   overdue:  { color: 'var(--red)',    label: 'Просрочено' },
-  reported: { color: 'var(--yellow)', label: 'На проверке' },
+  reported: { color: 'var(--yellow)', label: 'На проверку' },
   pending:  { color: 'var(--violet)', label: 'Ждут подтверждения' },
 };
 
 // Строка входящих тренера
+const hiddenReports = new Set(); // отчёты, которые тренер свернул
+function toggleReport(id) {
+  if (hiddenReports.has(id)) hiddenReports.delete(id); else hiddenReports.add(id);
+  render();
+}
+
 function coachInboxItem(t) {
   if (t.status === 'reported') {
-    const thumb = t.photo ? `<img src="${t.photo}" class="rv-thumb" alt="Отчёт" onclick="openPhoto('${t.id}')">` : '';
-    return `<div class="inbox-row inbox-review">
-      <div class="rv-top${thumb ? '' : ' nophoto'}">
-        ${thumb}
-        <div class="rv-text"><div class="card-name">${t.name}</div>${coachTimeMeta(t)}</div>
-        <div class="card-fine">${t.fine} ₽</div>
-      </div>
-      <div class="rv-btns">
-        <button class="btn btn-green" onclick="reviewTask('${t.id}',true)">Принять</button>
-        <button class="btn-outline" onclick="reviewTask('${t.id}',false)">Отклонить</button>
+    const hidden = hiddenReports.has(t.id);
+    const photo = t.photo ? `
+        <button class="rv-toggle" onclick="toggleReport('${t.id}')">${hidden ? 'Посмотреть отчёт' : 'Скрыть отчёт'}</button>
+        <img src="${t.photo}" class="rv-photo" alt="Отчёт" onclick="openPhoto('${t.id}')"${hidden ? ' hidden' : ''}>` : '';
+    return `<div class="inbox-row">
+      ${taskName(t)}<div class="card-fine">${t.fine} ₽</div>
+      ${coachTimeMeta(t)}
+      <div class="row-extra">${photo}
+        <div class="rv-btns">
+          <button class="btn btn-green" onclick="reviewTask('${t.id}',true)">Принять</button>
+          <button class="btn-outline" onclick="reviewTask('${t.id}',false)">Отклонить</button>
+        </div>
       </div>
     </div>`;
   }
   if (t.status === 'overdue') {
     const expiry = new Date(new Date(t.overdueAt || t.deadline).getTime() + 12*3600000).toISOString();
     return `<div class="inbox-row">
-      <div class="card-name">${t.name}</div>
+      ${taskName(t)}
       <button class="btn-outline danger" onclick="confirmOverdue('${t.id}')">Штраф ${t.fine} ₽</button>
-      <div class="time-meta">дедлайн ${deadlineStr(t.deadline)} · решить за <b data-left="${expiry}">${timeLeft(expiry) || 'время вышло'}</b></div>
+      <div class="mt">${fld('Дедлайн', deadlineStr(t.deadline))}<div class="fld"><span class="lbl">Решить за:</span> <b data-left="${expiry}">${timeLeft(expiry) || 'время вышло'}</b></div></div>
     </div>`;
   }
   return `<div class="inbox-row">
-    <div class="card-name">${t.name}</div>
+    ${taskName(t)}
     <button class="btn-outline" aria-label="Подтвердить" onclick="confirmTask('${t.id}')">✓</button>
-    <div class="time-meta">до <b>${deadlineStr(t.deadline)}</b> · ${t.fine} ₽</div>
+    <div class="mt">${fld('Дедлайн', deadlineStr(t.deadline))}${fld('Штраф', t.fine + ' ₽')}</div>
   </div>`;
 }
 
@@ -1201,17 +1292,14 @@ function renderStudentHistory() {
   el.innerHTML = html;
 }
 
-// COACH INBOX
+// COACH INBOX: только то, что ждёт решения тренера
 function renderInbox() {
   const el = document.getElementById('tab-inbox');
   let html = '';
 
-  html += renderQuotaCard();
-
   // Debt proposal for coach
   if (S.debtProposal && S.debtProposal.from === 'student') {
-    html += `<div class="section-title">Запрос на изменение долга</div>
-    <div class="card" style="border-color:var(--yellow)">
+    html += `<div class="card" style="border-color:var(--yellow)">
       <div class="card-top"><div class="card-name">Ученик предлагает новый долг</div><div class="card-fine">${S.debtProposal.newDebt}₽</div></div>
       ${S.debtProposal.comment ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${S.debtProposal.comment}</div>` : ''}
       <div class="card-actions">
@@ -1222,39 +1310,33 @@ function renderInbox() {
   }
 
   const inbox = S.tasks.filter(t => ['pending','reported','overdue'].includes(t.status));
-  if (inbox.length) {
-    html += `<div class="section-title">Входящие · ${inbox.length}</div>`;
-    ['overdue', 'reported', 'pending'].forEach(status => {
-      const items = inbox.filter(t => t.status === status);
-      if (!items.length) return;
-      const m = INBOX_TYPE[status];
-      const bulk = status === 'pending' && items.length > 1
-        ? '<button class="inbox-bulk" onclick="confirmAllPending()">Подтвердить все</button>' : '';
-      html += `<div class="inbox-group">
-        <div class="inbox-group-head"><span class="inbox-type-dot" style="background:${m.color}"></span>${m.label} <span class="cnt">${items.length}</span>${bulk}</div>
-        <div class="inbox-list">${items.map(coachInboxItem).join('')}</div>
-      </div>`;
-    });
-  }
+  ['overdue', 'reported', 'pending'].forEach(status => {
+    const items = inbox.filter(t => t.status === status);
+    if (!items.length) return;
+    const m = INBOX_TYPE[status];
+    const bulk = status === 'pending' && items.length > 1
+      ? '<button class="inbox-bulk" onclick="confirmAllPending()">Подтвердить все</button>' : '';
+    html += grpBox(m.color, m.label, items.length, rowsBox(items.map(coachInboxItem)), bulk);
+  });
 
   if (!S.debtProposal && !inbox.length) {
     html += '<div class="empty"><div class="empty-icon">✅</div>Всё проверено.<br>Новых входящих нет.</div>';
   }
+  el.innerHTML = html;
+}
 
-  // Задачи в работе: сколько времени осталось у ученика
+// COACH WORK: задачи ученика с полосой времени и таймер бездействия
+function renderWork() {
+  const el = document.getElementById('tab-work');
   const running = S.tasks.filter(t => t.status === 'active')
     .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-  if (running.length) {
-    html += `<div class="section-title">В работе · ${running.length}</div>
-      <div class="inbox-group"><div class="inbox-list">${running.map(t => `<div class="inbox-row">
-        <div class="card-name">${t.name}</div>
-        <div class="card-fine">${t.fine} ₽</div>
-        ${timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до')}
-      </div>`).join('')}</div></div>`;
-  }
-
-  html += renderMiniCalendar();
-  html += renderTimerCard('coach');
+  let html = grpBox('var(--teal)', 'Задачи ученика', running.length, running.length
+    ? rowsBox(running.map(t => `<div class="inbox-row">
+        ${taskName(t)}<div class="card-fine">${t.fine} ₽</div>
+        ${timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'Дедлайн')}
+      </div>`))
+    : '<div class="empty" style="padding:20px">Сейчас ученик ничего не выполняет</div>');
+  html += grpBox('var(--orange)', 'Таймер бездействия', null, renderTimerCard('coach'));
   el.innerHTML = html;
   if (!timerEverStarted() && S.role === 'coach') setTimeout(showTutorial, 150);
 }
@@ -1297,12 +1379,11 @@ function renderAll() {
       failed: '<span class="badge badge-failed">✗ Провалено</span>',
       burned: '<span class="badge badge-burned">— Сгорела</span>',
     };
-    html += S.tasks.slice().reverse().map(t => `
-      <div class="card">
-        <div class="card-top"><div class="card-name">${t.name}</div><div class="card-fine">${t.fine}₽</div></div>
-        ${t.status === 'active' ? timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до') : coachTimeMeta(t)}
-        ${t.status === 'active' ? '' : badgesAll[t.status]||''}
-      </div>`).join('');
+    html += '<div class="inbox-list">' + S.tasks.slice().reverse().map(t => `
+      <div class="inbox-row">
+        ${taskName(t)}${t.status === 'active' ? `<div class="card-fine">${t.fine} ₽</div>` : badgesAll[t.status] || ''}
+        ${t.status === 'active' ? timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'Дедлайн') : coachTimeMeta(t)}
+      </div>`).join('') + '</div>';
   }
 
   el.innerHTML = html;
@@ -1842,6 +1923,7 @@ function timerEverStarted() {
 
 function showTutorial() {
   if (timerEverStarted() || S.role !== 'coach' || tutorialDismissed()) return;
+  if (!document.getElementById('tab-work')?.classList.contains('active')) return;
   const btn = document.getElementById('start-timer-btn');
   if (!btn) { setTimeout(showTutorial, 300); return; }
 
