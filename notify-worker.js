@@ -5,7 +5,9 @@
  *  - хранит ключ JSONBin у себя (в секретах Cloudflare), приложение его не видит;
  *  - проверяет PIN-коды (в базе лежат только их хеши) и выдаёт токен входа;
  *  - читает и записывает данные только по токену: тренер меняет только свою ветку;
- *  - отправляет уведомления бота ученику (тоже только по токену).
+ *  - отправляет уведомления бота ученику (тоже только по токену);
+ *  - хранит фото отчётов в отдельных бинах JSONBin (у каждого свой лимит 100 КБ),
+ *    в общем документе остаётся только id фото; после проверки бин удаляется.
  *
  * ─────────────────────────────────────────────────────────────
  * НАСТРОЙКА (один раз):
@@ -76,9 +78,12 @@ async function readDB(env) {
 }
 
 async function writeDB(env, db) {
-  // Фото нужно только пока отчёт ждёт проверки
+  // Фото нужно только пока отчёт ждёт проверки; бины проверенных фото удаляем после записи
+  const stale = [];
   COACHES.forEach(c => (db.branches[c]?.tasks || []).forEach(t => {
-    if (t.photo && t.status !== 'reported') t.photo = null;
+    if (t.status === 'reported') return;
+    if (t.photo) t.photo = null;
+    if (t.photoId) { stale.push(t.photoId); t.photoId = null; }
   }));
   const body = JSON.stringify(db);
   if (enc.encode(body).length > BIN_LIMIT) return 'too_big';
@@ -87,7 +92,37 @@ async function writeDB(env, db) {
     headers: { 'Content-Type': 'application/json', 'X-Master-Key': env.JSONBIN_KEY },
     body,
   });
-  return r.ok ? 'ok' : 'write_failed';
+  if (!r.ok) return 'write_failed';
+  await Promise.allSettled(stale.map(id => fetch(PHOTO_URL + '/' + encodeURIComponent(id), {
+    method: 'DELETE', headers: { 'X-Master-Key': env.JSONBIN_KEY },
+  })));
+  return 'ok';
+}
+
+// ── ФОТО ОТЧЁТОВ: отдельный бин на каждое фото ──
+const PHOTO_URL = 'https://api.jsonbin.io/v3/b';
+
+async function photoPut(env, acc, { data }) {
+  if (acc !== 'student') return json({ error: 'forbidden' }, 403);
+  data = String(data || '');
+  if (!data.startsWith('data:image/')) return json({ error: 'bad_photo' }, 400);
+  if (enc.encode(data).length > BIN_LIMIT) return json({ error: 'too_big' }, 413);
+  const r = await fetch(PHOTO_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Private': 'true', 'X-Bin-Name': 'report-photo' },
+    body: JSON.stringify({ data }),
+  });
+  if (!r.ok) return json({ error: 'photo_failed', status: r.status }, 502);
+  const res = await r.json();
+  return json({ id: res?.metadata?.id });
+}
+
+async function photoGet(env, { id }) {
+  if (!/^[a-f0-9]{24}$/i.test(String(id || ''))) return json({ error: 'bad_id' }, 400);
+  const r = await fetch(PHOTO_URL + '/' + id + '/latest', { headers: { 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Meta': 'false' } });
+  if (!r.ok) return json({ error: 'not_found' }, 404);
+  const rec = await r.json();
+  return json({ data: (rec?.record || rec)?.data || null });
 }
 
 const obj = v => (v && typeof v === 'object' ? v : {});
@@ -210,6 +245,8 @@ export default {
       if (path === '/data') return json({ acc, db: publicView(await readDB(env)) });
       if (path === '/save') return save(env, acc, body);
       if (path === '/notify') return notify(env, body);
+      if (path === '/photo') return photoPut(env, acc, body);
+      if (path === '/photo-get') return photoGet(env, body);
       return json({ error: 'not_found' }, 404);
     } catch (e) {
       return json({ error: 'upstream', detail: String(e.message || e) }, 502);
