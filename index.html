@@ -605,10 +605,12 @@ const BOT_USERNAME = 'Abc7417bot'; // @username бота из BotFather (без 
 const APP_URL = 'https://ghostvip1717-glitch.github.io/Trening/';
 // Ссылка, открывающая мини-приложение прямо в Telegram (или веб-версию, если username не задан)
 function appLink() { return BOT_USERNAME ? 'https://t.me/' + BOT_USERNAME + '?startapp' : APP_URL; }
-// Уведомления от бота получает только ученик (адресата выбирает воркер); тренерам бот не пишет
-function notifyAll(text) {
-  if (!TOKEN || !S.chatIds?.student) return;
-  api('/notify', { message: text }).catch(() => {});
+// Уведомления бота по активной ветке: to = 'student' | 'coach' (тренер ветки) | 'other' (вторая сторона) | 'all'.
+// Тренер другой ветки уведомления не получает; chat_id адресатов берёт воркер
+function notifyAll(text, to = 'all') {
+  if (!TOKEN) return;
+  if (to === 'other') to = S.role === 'student' ? 'coach' : 'student';
+  api('/notify', { message: text, branch: BR, to }).catch(() => {});
 }
 
 // Текст личного сообщения тренеру (от лица ученика)
@@ -660,7 +662,7 @@ function roleName(role) {
 function maybeSuggestTimer() {
   const hasActive = S.tasks.some(t => ['pending','active','reported','overdue'].includes(t.status));
   if (!hasActive && S.tasks.length > 0 && !S.inactivityTimer?.active) {
-    notifyAll('💡 Активных задач не осталось. Тренер может запустить таймер бездействия!');
+    notifyAll('💡 Активных задач не осталось. Тренер может запустить таймер бездействия!', 'coach');
   }
 }
 
@@ -687,7 +689,7 @@ async function toggleAutoTimer() {
   const started = maybeAutoStartTimer();
   await save(); render();
   toast(S.autoTimer ? (started ? '⏱ Автозапуск включён, таймер запущен' : '⏱ Автозапуск включён') : 'Автозапуск выключен');
-  if (started) notifyAll('⏱ Таймер бездействия запущен автоматически: открытых задач нет. Базовый штраф: ' + S.inactivityTimer.baseAmount + '₽');
+  if (started) notifyAll('⏱ Таймер бездействия запущен автоматически: открытых задач нет. Базовый штраф: ' + S.inactivityTimer.baseAmount + '₽', 'coach');
 }
 
 function emptyBranch() {
@@ -1554,8 +1556,8 @@ async function createTask() {
   await save(); closeModal('m-task'); render();
   document.getElementById('t-name').value = ''; document.getElementById('t-fine').value = '';
   const dlFormatted = new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  notifyAll('📋 ' + roleName('student') + ' создал(а) задачу:\n' + name + '\nШтраф: ' + fine + '₽\nДедлайн: ' + dlFormatted + '\n⏳ Нужно подтверждение тренера!');
-  if (timerStopped) notifyAll('⏹ Таймер бездействия остановлен — ' + roleName('student') + ' создал(а) задачу.');
+  notifyAll('📋 ' + roleName('student') + ' создал(а) задачу:\n' + name + '\nШтраф: ' + fine + '₽\nДедлайн: ' + dlFormatted + '\n⏳ Нужно подтверждение тренера!', 'coach');
+  if (timerStopped) notifyAll('⏹ Таймер бездействия остановлен — ' + roleName('student') + ' создал(а) задачу.', 'coach');
 }
 
 async function confirmTask(id) {
@@ -1563,7 +1565,7 @@ async function confirmTask(id) {
   if (!t) return;
   t.status = 'active'; t.confirmedAt = new Date().toISOString();
   await save(); render(); toast('✅ Задача подтверждена!');
-  notifyAll('✅ ' + roleName('coach') + ' подтвердил(а) задачу: ' + t.name + '\n▶ Задача запущена, ученик может приступать!');
+  notifyAll('✅ ' + roleName('coach') + ' подтвердил(а) задачу: ' + t.name + '\n▶ Задача запущена, ученик может приступать!', 'student');
 }
 
 async function confirmAllPending() {
@@ -1572,7 +1574,7 @@ async function confirmAllPending() {
   const now = new Date().toISOString();
   list.forEach(t => { t.status = 'active'; t.confirmedAt = now; });
   await save(); render(); toast('✅ Подтверждено задач: ' + list.length);
-  notifyAll('✅ ' + roleName('coach') + ' подтвердил(а) задачи (' + list.length + '):\n' + list.map(t => '• ' + t.name).join('\n') + '\n▶ Задачи запущены, ученик может приступать!');
+  notifyAll('✅ ' + roleName('coach') + ' подтвердил(а) задачи (' + list.length + '):\n' + list.map(t => '• ' + t.name).join('\n') + '\n▶ Задачи запущены, ученик может приступать!', 'student');
 }
 
 function openReport(id) {
@@ -1662,7 +1664,7 @@ async function submitReport() {
   notifyAll('📸 ' + roleName('student') + ' отправил(а) фото-отчёт: ' + t.name +
     '\nОтправлено: ' + deadlineStr(t.reportedAt) +
     '\nДедлайн: ' + deadlineStr(t.deadline) +
-    '\n⏳ Тренеру нужно проверить отчёт в приложении!');
+    '\n⏳ Тренеру нужно проверить отчёт в приложении!', 'coach');
   photoBase64 = null; photoImg = null;
 }
 
@@ -1673,14 +1675,14 @@ async function reviewTask(id, ok) {
   if (ok) {
     t.status = 'done'; t.doneAt = t.reviewedAt = new Date().toISOString();
     toast('✅ Отчёт принят!');
-    notifyAll('✅ ' + roleName('coach') + ' принял(а) отчёт: ' + t.name + '\nЗадача выполнена!');
+    notifyAll('✅ ' + roleName('coach') + ' принял(а) отчёт: ' + t.name + '\nЗадача выполнена!', 'student');
   } else {
     t.status = 'failed'; t.reviewedAt = new Date().toISOString();
     const before = S.debt;
     S.debt += t.fine;
     S.history.push({ type: 'earned', name: t.name, amount: t.fine, date: t.reviewedAt, taskId: t.id, reason: 'Отчёт отклонён тренером', debtBefore: before, debtAfter: S.debt });
     toast(`Штраф ${t.fine}₽ начислен`);
-    notifyAll('❌ ' + roleName('coach') + ' отклонил(а) отчёт: ' + t.name + '\nШтраф ' + t.fine + '₽ начислен. Долг ученика: ' + S.debt + '₽');
+    notifyAll('❌ ' + roleName('coach') + ' отклонил(а) отчёт: ' + t.name + '\nШтраф ' + t.fine + '₽ начислен. Долг ученика: ' + S.debt + '₽', 'student');
   }
   await save(); render();
   maybeSuggestTimer();
@@ -1694,7 +1696,7 @@ async function confirmOverdue(id) {
   S.debt += t.fine;
   S.history.push({ type: 'earned', name: t.name + ' (просрочено)', amount: t.fine, date: t.reviewedAt, taskId: t.id, reason: 'Просрочка подтверждена тренером', debtBefore: before, debtAfter: S.debt });
   await save(); render(); toast(`Просрочка подтверждена. Штраф ${t.fine}₽`);
-  notifyAll('⚠️ ' + roleName('coach') + ' зафиксировал(а) просрочку: ' + t.name + '\nШтраф ' + t.fine + '₽ добавлен к долгу. Долг ученика: ' + S.debt + '₽');
+  notifyAll('⚠️ ' + roleName('coach') + ' зафиксировал(а) просрочку: ' + t.name + '\nШтраф ' + t.fine + '₽ добавлен к долгу. Долг ученика: ' + S.debt + '₽', 'student');
   maybeSuggestTimer();
 }
 
@@ -1715,7 +1717,7 @@ async function proposeDebtChange() {
   if (isNaN(newDebt) || newDebt < 0) { toast('⚠️ Укажи сумму'); return; }
   S.debtProposal = { from, newDebt, comment, createdAt: new Date().toISOString() };
   await save(); closeModal('m-debt'); render(); toast('📨 Запрос отправлен!');
-  notifyAll('💰 ' + roleName(from) + ' предлагает изменить долг на ' + newDebt + '₽' + (comment ? '\nКомментарий: ' + comment : '') + '\n⏳ Нужно подтверждение второй стороны!');
+  notifyAll('💰 ' + roleName(from) + ' предлагает изменить долг на ' + newDebt + '₽' + (comment ? '\nКомментарий: ' + comment : '') + '\n⏳ Нужно подтверждение второй стороны!', 'other');
 }
 
 async function confirmDebt(ok) {
@@ -1733,10 +1735,10 @@ async function confirmDebt(ok) {
       debtBefore: old, debtAfter: S.debt
     });
     toast(`✅ Долг изменён на ${S.debtProposal.newDebt}₽`);
-    notifyAll('✅ Изменение долга подтверждено. Новый долг: ' + S.debtProposal.newDebt + '₽');
+    notifyAll('✅ Изменение долга подтверждено. Новый долг: ' + S.debtProposal.newDebt + '₽', 'other');
   } else {
     toast('Запрос отклонён');
-    notifyAll('❌ Запрос на изменение долга отклонён. Долг остался: ' + S.debt + '₽');
+    notifyAll('❌ Запрос на изменение долга отклонён. Долг остался: ' + S.debt + '₽', 'other');
   }
   S.debtProposal = null;
   await save(); render();
@@ -1982,13 +1984,13 @@ async function startInactivityTimer() {
   if (!amount || amount <= 0) { toast('⚠️ Укажи сумму'); return; }
   S.inactivityTimer = { baseAmount: amount, startedAt: new Date().toISOString(), lastChargedAt: null, active: true };
   await save(); closeModal('m-timer'); render(); toast('▶ Таймер запущен!');
-  notifyAll('⏱ ' + roleName('coach') + ' запустил(а) таймер бездействия!\nБазовый штраф: ' + amount + '₽\nЕсли ученик не создаст задачу за 48 часов — штраф начислится автоматически, далее +10% каждые 12 часов.');
+  notifyAll('⏱ ' + roleName('coach') + ' запустил(а) таймер бездействия!\nБазовый штраф: ' + amount + '₽\nЕсли ученик не создаст задачу за 48 часов — штраф начислится автоматически, далее +10% каждые 12 часов.', 'student');
 }
 
 async function stopInactivityTimer() {
   S.inactivityTimer = { ...S.inactivityTimer, active: false };
   await save(); render(); toast('⏹ Таймер остановлен');
-  notifyAll('⏹ ' + roleName('coach') + ' остановил(а) таймер бездействия.');
+  notifyAll('⏹ ' + roleName('coach') + ' остановил(а) таймер бездействия.', 'student');
 }
 
 function checkInactivityTimer() {
