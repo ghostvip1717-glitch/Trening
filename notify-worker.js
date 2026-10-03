@@ -5,7 +5,7 @@
  *  - хранит ключ JSONBin у себя (в секретах Cloudflare), приложение его не видит;
  *  - проверяет PIN-коды (в базе лежат только их хеши) и выдаёт токен входа;
  *  - читает и записывает данные только по токену: тренер меняет только свою ветку;
- *  - отправляет уведомления бота ученику (тоже только по токену);
+ *  - отправляет уведомления бота ученику и тренеру нужной ветки (тоже только по токену);
  *  - хранит фото отчётов отдельно от общего документа: фото режется на части по 90 КБ,
  *    каждая часть — свой бин JSONBin (лимит 100 КБ на бин). В задаче остаётся только
  *    id частей через точку; после проверки отчёта бины удаляются.
@@ -238,22 +238,32 @@ async function save(env, acc, { branches, identity }) {
   return json({ ok: true });
 }
 
-// Уведомления получает только ученик
-async function notify(env, { message }) {
+// Уведомления по ветке: получает ученик и/или тренер этой ветки, тренер другой ветки — нет.
+// to: 'student' | 'coach' | 'all' (по умолчанию — старые клиенты слали без адресата)
+async function notify(env, acc, { message, branch, to }) {
   if (!message) return json({ error: 'message required' }, 400);
+  branch = branch || (acc === 'student' ? null : acc);
+  if (branch && !COACHES.includes(branch)) return json({ error: 'bad_branch' }, 400);
+  if (acc !== 'student' && branch !== acc) return json({ error: 'forbidden_branch' }, 403);
+  if (!['student', 'coach', 'all'].includes(to)) to = branch ? 'all' : 'student';
+  const targets = [];
+  if (to !== 'coach') targets.push('student');
+  if (to !== 'student' && branch) targets.push(branch);
   const db = await readDB(env);
-  const chatId = db.chatIds.student;
-  if (!chatId) return json({ ok: false, error: 'no_student_chat' });
-  const resp = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendMessage', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: String(message).slice(0, 4000),
-      reply_markup: { inline_keyboard: [[{ text: '🚀 Открыть приложение', url: APP_LINK }]] },
-    }),
-  });
-  return json({ ok: resp.ok }, resp.ok ? 200 : 502);
+  const chatIds = [...new Set(targets.map(a => db.chatIds[a]).filter(Boolean).map(String))];
+  if (!chatIds.length) return json({ ok: false, error: 'no_chat' });
+  const results = await Promise.all(chatIds.map(chatId =>
+    fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: String(message).slice(0, 4000),
+        reply_markup: { inline_keyboard: [[{ text: '🚀 Открыть приложение', url: APP_LINK }]] },
+      }),
+    }).then(r => r.ok, () => false)));
+  const ok = results.every(Boolean);
+  return json({ ok, sent: results.filter(Boolean).length }, ok ? 200 : 502);
 }
 
 export default {
@@ -279,7 +289,7 @@ export default {
       if (!acc) return json({ error: 'unauthorized' }, 401);
       if (path === '/data') return json({ acc, db: publicView(await readDB(env)) });
       if (path === '/save') return save(env, acc, body);
-      if (path === '/notify') return notify(env, body);
+      if (path === '/notify') return notify(env, acc, body);
       if (path === '/photo') return photoPut(env, acc, body);
       if (path === '/photo-get') return photoGet(env, body);
       return json({ error: 'not_found' }, 404);
