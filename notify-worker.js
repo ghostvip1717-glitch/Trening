@@ -2,21 +2,23 @@
  * Cloudflare Worker «trening-notify» — единственная дверь к данным приложения
  *
  * Что делает:
- *  - хранит ключ JSONBin у себя (в секретах Cloudflare), приложение его не видит;
+ *  - хранит данные в Cloudflare KV (привязка DB): общий документ под ключом «db»,
+ *    фото отчётов — каждое под своим ключом «photo:<id>», без лимита 100 КБ;
+ *  - при первом запуске сам переносит данные из JSONBin в KV;
  *  - проверяет PIN-коды (в базе лежат только их хеши) и выдаёт токен входа;
  *  - читает и записывает данные только по токену: тренер меняет только свою ветку;
- *  - отправляет уведомления бота ученику и тренеру нужной ветки (тоже только по токену);
- *  - хранит фото отчётов отдельно от общего документа: фото режется на части по 90 КБ,
- *    каждая часть — свой бин JSONBin (лимит 100 КБ на бин). В задаче остаётся только
- *    id частей через точку; после проверки отчёта бины удаляются.
+ *  - отправляет уведомления бота ученику (тоже только по токену).
  *
  * ─────────────────────────────────────────────────────────────
  * НАСТРОЙКА (один раз):
- * 1. https://dash.cloudflare.com → Workers & Pages → trening-notify
- * 2. Settings → Variables and Secrets → Add, тип «Secret»:
+ * 1. https://dash.cloudflare.com → Storage & Databases → KV → Create → имя «trening-data»
+ * 2. Workers & Pages → trening-notify → Settings → Bindings → Add → KV namespace:
+ *      Variable name: DB   ·   KV namespace: trening-data   → Save
+ * 3. Settings → Variables and Secrets (уже должны быть, тип «Secret»):
  *      BOT_TOKEN    — токен бота от @BotFather
- *      JSONBIN_KEY  — X-Master-Key из https://jsonbin.io/app/app/api-keys
- * 3. Edit code → выделить весь старый код → вставить этот файл → Deploy
+ *      JSONBIN_KEY  — ключ JSONBin: нужен для переноса старых данных и подписи входа,
+ *                     не удалять (иначе все выйдут из приложения)
+ * 4. Edit code → выделить весь старый код → вставить этот файл → Deploy
  *
  * ⚠️ Токены вставляй ТОЛЬКО в секреты Cloudflare, не в этот файл.
  * ─────────────────────────────────────────────────────────────
@@ -28,7 +30,6 @@ const APP_LINK = 'https://t.me/Abc7417bot?startapp';
 
 const ACCOUNTS = ['student', 'coach1', 'coach2'];
 const COACHES = ['coach1', 'coach2'];
-const BIN_LIMIT = 98000;          // бесплатный JSONBin не принимает документы больше 100 КБ
 const TOKEN_TTL = 7 * 24 * 3600;  // сек
 const MAX_FAILS = 10;             // неверных PIN подряд до блокировки
 const LOCK_MIN = 15;
@@ -70,94 +71,79 @@ async function readToken(env, request) {
   } catch { return null; }
 }
 
-// ── ДАННЫЕ ──
+// ── ДАННЫЕ: Cloudflare KV ──
+const DB_KEY = 'db';
+const PHOTO_MAX = 2_000_000;      // символов base64 на одно фото (~1,5 МБ картинки)
+
 async function readDB(env) {
+  let db = await env.DB.get(DB_KEY, 'json');
+  if (!db) db = await migrateFromJsonbin(env);
+  return normalize(db);
+}
+
+// Первый запуск: забираем документ из JSONBin вместе с фото и кладём в KV
+async function migrateFromJsonbin(env) {
+  if (!env.JSONBIN_KEY) throw new Error('kv_empty');
   const r = await fetch(BIN_URL + '/latest', { headers: { 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Meta': 'false' } });
-  if (!r.ok) throw new Error('read ' + r.status);
+  if (!r.ok) throw new Error('jsonbin_read ' + r.status);
   const data = await r.json();
-  return normalize(data?.record || data);
+  const db = normalize(data?.record || data);
+  for (const c of COACHES) for (const t of db.branches[c]?.tasks || []) {
+    if (t.status !== 'reported') { t.photo = null; t.photoId = null; continue; }
+    if (!t.photo && t.photoId) t.photo = await jsonbinPhoto(env, t.photoId); // фото по частям в JSONBin
+  }
+  await writeDB(env, db);
+  return db;
+}
+
+async function jsonbinPhoto(env, ids) {
+  const parts = await Promise.all(String(ids).split('.').map(async id => {
+    const r = await fetch('https://api.jsonbin.io/v3/b/' + id + '/latest', { headers: { 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Meta': 'false' } });
+    if (!r.ok) return null;
+    const rec = await r.json();
+    return (rec?.record || rec)?.data ?? null;
+  }));
+  return parts.some(p => p === null) ? null : parts.join('');
 }
 
 async function writeDB(env, db) {
-  // Фото нужно только пока отчёт ждёт проверки; бины проверенных фото удаляем после записи
-  const stale = [], inline = [];
-  COACHES.forEach(c => (db.branches[c]?.tasks || []).forEach(t => {
-    if (t.status === 'reported') { if (t.photo) inline.push(t); return; }
+  // Фото нужно только пока отчёт ждёт проверки
+  const stale = [];
+  for (const c of COACHES) for (const t of db.branches[c]?.tasks || []) {
+    if (t.status === 'reported') {
+      // фото внутри документа выносим под отдельный ключ
+      if (t.photo) { const id = newId(); await env.DB.put('photo:' + id, t.photo); t.photoId = id; t.photo = null; }
+      continue;
+    }
     if (t.photo) t.photo = null;
     if (t.photoId) { stale.push(t.photoId); t.photoId = null; }
-  }));
-  // Старые отчёты с фото внутри документа: выносим фото в отдельные бины, чтобы освободить место
-  for (const t of inline) {
-    const ids = [];
-    for (let i = 0; i < t.photo.length; i += PHOTO_CHUNK) {
-      const id = await createPhotoBin(env, t.photo.slice(i, i + PHOTO_CHUNK));
-      if (!id) break;
-      ids.push(id);
-    }
-    if (ids.length * PHOTO_CHUNK >= t.photo.length) { t.photoId = ids.join('.'); t.photo = null; }
-    else await deletePhoto(env, ids.join('.'));
   }
-  const body = JSON.stringify(db);
-  if (enc.encode(body).length > BIN_LIMIT) return 'too_big';
-  const r = await fetch(BIN_URL, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': env.JSONBIN_KEY },
-    body,
-  });
-  if (!r.ok) return 'write_failed';
-  await deletePhoto(env, stale.join('.'));
+  try { await env.DB.put(DB_KEY, JSON.stringify(db)); }
+  catch (e) { return 'write_failed: ' + String(e.message || e).slice(0, 120); }
+  await Promise.allSettled(stale.map(id => env.DB.delete('photo:' + id)));
   return 'ok';
 }
 
-// ── ФОТО ОТЧЁТОВ: отдельный бин на каждое фото ──
-const PHOTO_URL = 'https://api.jsonbin.io/v3/b';
+const newId = () => [...crypto.getRandomValues(new Uint8Array(12))].map(b => b.toString(16).padStart(2, '0')).join('');
 
-async function createPhotoBin(env, data) {
-  const r = await fetch(PHOTO_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Private': 'true', 'X-Bin-Name': 'report-photo' },
-    body: JSON.stringify({ data }),
-  });
-  if (!r.ok) return null;
-  const res = await r.json().catch(() => ({}));
-  return res?.metadata?.id || null;
-}
-
-const PHOTO_CHUNK = 90000;        // символов base64 в одной части (бин ≤ 100 КБ)
-const PHOTO_MAX = 10 * PHOTO_CHUNK; // до ~900 КБ на одно фото
-const ID_RE = /^[a-f0-9]{24}(\.[a-f0-9]{24}){0,9}$/i;
-
-async function deletePhoto(env, ids) {
-  const list = String(ids || '').split('.').filter(Boolean);
-  await Promise.allSettled(list.map(id => fetch(PHOTO_URL + '/' + encodeURIComponent(id), {
-    method: 'DELETE', headers: { 'X-Master-Key': env.JSONBIN_KEY },
-  })));
-}
-
+// ── ФОТО ОТЧЁТОВ ──
 async function photoPut(env, acc, { data }) {
   if (acc !== 'student') return json({ error: 'forbidden' }, 403);
   data = String(data || '');
   if (!data.startsWith('data:image/')) return json({ error: 'bad_photo' }, 400);
   if (data.length > PHOTO_MAX) return json({ error: 'too_big' }, 413);
-  const ids = [];
-  for (let i = 0; i < data.length; i += PHOTO_CHUNK) {
-    const id = await createPhotoBin(env, data.slice(i, i + PHOTO_CHUNK));
-    if (!id) { await deletePhoto(env, ids.join('.')); return json({ error: 'photo_failed' }, 502); }
-    ids.push(id);
-  }
-  return json({ id: ids.join('.') });
+  const id = newId();
+  await env.DB.put('photo:' + id, data);
+  return json({ id });
 }
 
 async function photoGet(env, { id }) {
-  if (!ID_RE.test(String(id || ''))) return json({ error: 'bad_id' }, 400);
-  const parts = await Promise.all(String(id).split('.').map(async part => {
-    const r = await fetch(PHOTO_URL + '/' + part + '/latest', { headers: { 'X-Master-Key': env.JSONBIN_KEY, 'X-Bin-Meta': 'false' } });
-    if (!r.ok) return null;
-    const rec = await r.json();
-    return (rec?.record || rec)?.data ?? null;
-  }));
-  if (parts.some(p => p === null)) return json({ error: 'not_found' }, 404);
-  return json({ data: parts.join('') });
+  id = String(id || '');
+  if (!/^[a-f0-9]{24}(\.[a-f0-9]{24}){0,9}$/i.test(id)) return json({ error: 'bad_id' }, 400);
+  let data = await env.DB.get('photo:' + id);
+  // старое фото, ещё лежащее в JSONBin по частям
+  if (data === null && env.JSONBIN_KEY) data = await jsonbinPhoto(env, id).catch(() => null);
+  return data ? json({ data }) : json({ error: 'not_found' }, 404);
 }
 
 const obj = v => (v && typeof v === 'object' ? v : {});
@@ -233,7 +219,6 @@ async function save(env, acc, { branches, identity }) {
   if (identity.chatId !== undefined) db.chatIds[acc] = identity.chatId;
   if (identity.name !== undefined) db.names[acc] = String(identity.name).slice(0, 64);
   const res = await writeDB(env, db);
-  if (res === 'too_big') return json({ error: res, bytes: enc.encode(JSON.stringify(db)).length }, 413);
   if (res !== 'ok') return json({ error: res }, 502);
   return json({ ok: true });
 }
@@ -269,6 +254,7 @@ async function notify(env, acc, { message, branch, to }) {
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
+    if (!env.DB) return json({ error: 'KV не подключён: Settings → Bindings → KV namespace с именем DB' }, 500);
     if (!env.JSONBIN_KEY) return json({ error: 'JSONBIN_KEY не задан в секретах воркера' }, 500);
     const path = new URL(request.url).pathname;
     try {

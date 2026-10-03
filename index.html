@@ -877,7 +877,7 @@ async function handlePin() {
     if (r.ok) return enterAs(r.data.acc, r.data);
     resetPin(r.status === 429 ? '🔒 Слишком много попыток. Подожди 15 минут'
       : r.status === 401 ? 'Неверный PIN-код, попробуй снова'
-      : 'Нет связи с сервером, попробуй ещё раз');
+      : 'Нет связи с сервером' + (r.data?.error ? ' (' + [r.data.error, r.data.detail].filter(Boolean).join(': ') + ')' : '') + ', попробуй ещё раз');
     return;
   }
   if (pinStep === 1) {
@@ -896,7 +896,7 @@ async function handlePin() {
   // PIN определяет аккаунт при входе, поэтому он должен быть уникальным
   if (r.data.error === 'pin_taken') return restart('Этот PIN уже занят, придумай другой');
   if (r.data.error === 'taken') { toast('Эта роль уже занята'); return route(); }
-  restart('Нет связи с сервером, попробуй ещё раз');
+  restart('Нет связи с сервером' + (r.data?.error ? ' (' + [r.data.error, r.data.detail].filter(Boolean).join(': ') + ')' : '') + ', попробуй ещё раз');
 }
 
 async function pinRequest(path, body) {
