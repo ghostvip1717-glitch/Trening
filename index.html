@@ -282,6 +282,7 @@ body {
 .btn-orange { background: rgba(255,159,67,0.14); color: var(--orange); flex: 1; }
 .btn-ghost { background: var(--surface2); color: var(--text); flex: 1; }
 .btn-neutral { background: rgba(255,255,255,0.06); color: var(--text); flex: 1; }
+.btn:disabled { opacity: 0.55; cursor: default; }
 
 .btn-fab { position: fixed; bottom: 72px; right: 18px; width: 50px; height: 50px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 24px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.35); z-index: 40; transition: transform 0.15s; }
 .btn-fab:active { transform: scale(0.92); }
@@ -1106,6 +1107,15 @@ function tickCountdowns() {
 }
 setInterval(tickCountdowns, 1000);
 
+// Отчёт принимается только в день дедлайна (по часам телефона ученика)
+function isReportDay(t) { return new Date(t.deadline).toDateString() === new Date().toDateString(); }
+function reportDayStr(t) { return new Date(t.deadline).toLocaleDateString('ru', { day: 'numeric', month: 'long' }); }
+function reportBtn(t, cls, onclick) {
+  return isReportDay(t)
+    ? `<button class="btn ${cls}" onclick="${onclick}">📸 Отправить отчёт</button>`
+    : `<button class="btn btn-neutral" disabled>📸 Отчёт можно отправить ${reportDayStr(t)}</button>`;
+}
+
 function deadlineStr(dl) {
   return new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 }
@@ -1193,7 +1203,7 @@ function renderTasks() {
   html += grpBox('var(--teal)', 'В работе', active.length, addRow + rowsBox(active.map((t, i) => taskRow(t, { num: i + 1,
     icon: '⏱', right: fine(t),
     bar: timerHTML(t.confirmedAt || t.createdAt, t.deadline, 'до'),
-    extra: `<button class="btn btn-green" onclick="openReport('${t.id}')">📸 Отправить отчёт</button>`
+    extra: reportBtn(t, 'btn-green', `openReport('${t.id}')`)
   }))), '⏱');
   const overdue = by('overdue');
   if (overdue.length) html += grpBox('var(--red)', 'Просрочено', overdue.length, rowsBox(overdue.map((t, i) => {
@@ -1429,7 +1439,7 @@ function taskCardHTML(t) {
       <div class="bar2"><i style="width:${pct}%;background:${pct >= 80 ? 'var(--red)' : 'var(--neutral)'}"></i></div>
       <div class="legend"><span>подтверждена ${conf ? deadlineStr(conf) : '—'}</span><span>прошло ${Math.round(pct)}% срока</span></div>
       <div class="d-grid">${tile('Срок на задачу', conf ? dur(dl - conf) : '—')}${tile('Если не успеть', '+' + t.fine + ' ₽', 'color:var(--red)')}</div>`;
-    if (!isCoach) acts = `<div class="d-acts"><button class="btn btn-primary" onclick="act(openReport,'${t.id}')">📸 Отправить отчёт</button><button class="btn btn-neutral" onclick="act(pokeCoach)">🔔 Написать тренеру</button></div>`;
+    if (!isCoach) acts = `<div class="d-acts">${reportBtn(t, 'btn-primary', `act(openReport,'${t.id}')`)}<button class="btn btn-neutral" onclick="act(pokeCoach)">🔔 Написать тренеру</button></div>`;
   } else if (t.status === 'pending') {
     h += `<div class="d-note">${isCoach ? 'Ученик создал задачу' : 'Задача создана'} ${dur(now - new Date(t.createdAt).getTime())} назад. После подтверждения запустится отсчёт до дедлайна.</div>
       <div class="d-grid">${tile('Дедлайн', deadlineStr(t.deadline))}${tile('Будет на выполнение', dl > now ? dur(dl - now) : 'время вышло')}${tile('Штраф', t.fine + ' ₽')}</div>`;
@@ -1578,6 +1588,8 @@ async function confirmAllPending() {
 }
 
 function openReport(id) {
+  const t = S.tasks.find(t => t.id === id);
+  if (t && !isReportDay(t)) { toast('⏳ Отчёт можно отправить только ' + reportDayStr(t)); return; }
   document.getElementById('r-tid').value = id;
   document.getElementById('photo-preview').style.display = 'none';
   document.getElementById('photo-preview').src = '';
@@ -1629,6 +1641,7 @@ async function submitReport() {
   if (!photoBase64) { toast('⚠️ Сделай фото или выбери скриншот'); return; }
   const t = S.tasks.find(t => t.id === id);
   if (!t) return;
+  if (!isReportDay(t)) { closeModal('m-report'); toast('⏳ Отчёт можно отправить только ' + reportDayStr(t)); return; }
 
   const btn = document.getElementById('report-send');
   btn.disabled = true; btn.textContent = 'Отправляю…';
