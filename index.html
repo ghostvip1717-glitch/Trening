@@ -1068,7 +1068,13 @@ function timerHTML(startAt, deadline, label) {
     </div>`;
 }
 
+// Отсчёт — только за последние 24 часа, раньше — день недели и дата: «Ср (08.10)»
 function countdownText(label, left, end) {
+  if (new Date(end) - new Date() > 86400000) {
+    const d = new Date(end);
+    const wd = d.toLocaleDateString('ru', { weekday: 'short' });
+    return `<b>${wd[0].toUpperCase() + wd.slice(1)} (${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')})</b>`;
+  }
   return `Осталось <b>${left || 'время вышло'}</b> · ${label} ${deadlineStr(end)}`;
 }
 
