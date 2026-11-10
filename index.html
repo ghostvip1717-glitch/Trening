@@ -239,9 +239,9 @@ body.sidebar-open{overflow:hidden}
 .task-row-extra .btn{width:100%}
 .ok-btn{min-height:32px;padding:0 12px;border-radius:9px;border:0;background:var(--btn);color:#fff;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .scheme-steps .scheme-flow{gap:8px}
-.scheme-steps .scheme-branch:nth-child(2){margin-left:6px}
-.scheme-steps .scheme-branch:nth-child(3){margin-left:12px}
-.scheme-steps .scheme-branch:nth-child(4){margin-left:18px}
+.scheme-steps .scheme-branch:nth-child(2){padding-left:30px}
+.scheme-steps .scheme-branch:nth-child(3){padding-left:36px}
+.scheme-steps .scheme-branch:nth-child(4){padding-left:42px}
 .scheme-frames .scheme-branch{padding:7px 8px;border:1px solid var(--border);border-radius:9px;background:color-mix(in srgb,var(--surface2) 45%,var(--surface))}
 .scheme-table .scheme-flow{gap:0}
 .scheme-table .scheme-branch{padding:8px 4px;border-bottom:1px solid var(--border)}
@@ -251,7 +251,7 @@ body.sidebar-open{overflow:hidden}
 .scheme-table .scheme-branch .scheme-label{grid-column:1;grid-row:1;margin:0;font-size:9px}
 .scheme-table .scheme-branch .scheme-task-name{grid-row:1;grid-column:1/-1}.scheme-table .scheme-branch .scheme-date,.scheme-table .scheme-branch .scheme-penalty{grid-row:1;grid-column:2}
 .scheme-double .scheme-flow:before{left:5px;width:2px;box-shadow:5px 0 0 var(--scheme-rail)}
-.scheme-double .scheme-branch{padding-left:5px}
+.scheme-double .scheme-branch{padding-left:24px}
 .scheme-double .scheme-branch:before{width:15px}
 .scheme-list{display:grid;gap:9px}
 .interface-option{display:grid;grid-template-columns:48px 1fr 22px;align-items:center;gap:10px;width:100%;min-height:64px;padding:9px;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);text-align:left;cursor:pointer}
@@ -484,7 +484,7 @@ body.sidebar-open{overflow:hidden}
 .pay-row .pa{color:var(--accent);font-size:18px;font-weight:800}
 .d-grid .d-cell:nth-child(3) b{color:var(--accent);font-size:19px;font-weight:800}
 :root[data-ui="orbit"] .app-top{padding:10px 14px 14px;text-align:center}
-:root[data-ui="orbit"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin:0 3px 10px}
+:root[data-ui="orbit"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin:0 3px 10px;padding-left:54px}
 :root[data-ui="orbit"] .role-pill{display:inline-block;padding:5px 10px;border-radius:99px;background:var(--surface2);color:var(--accent);font-size:10px;font-weight:700}
 :root[data-ui="orbit"] .debt-display{display:grid;justify-items:center;gap:4px;padding:12px;border:1px solid var(--border);border-radius:22px;background:radial-gradient(circle at center,var(--surface) 45%,var(--surface2) 100%);box-shadow:0 8px 22px rgba(72,50,130,.12)}
 :root[data-ui="orbit"] .debt-ava{width:42px;height:42px;margin:0 0 2px;border-radius:50%;font-size:19px}
@@ -1203,14 +1203,8 @@ function progressColor(pct) { return pct < 80 ? 'ok' : 'late'; }
 
 function timerHTML(startAt, deadline, label) {
   const pct = progressPct(startAt, deadline);
-  const left = timeLeft(deadline);
   const color = progressColor(pct);
-  const warn = pct > 79;
-  return `
-    <div class="progress-wrap" data-cd-start="${startAt}" data-cd-end="${deadline}" data-cd-label="${label}">
-      <div class="progress-bar"><div class="progress-fill ${color}" style="width:${pct}%"></div></div>
-      <div class="progress-time ${warn ? 'warn' : ''}">${countdownText(label, left, deadline)}</div>
-    </div>`;
+  return '<div class="scheme-countdown"><div class="progress-wrap" data-cd-start="' + startAt + '" data-cd-end="' + deadline + '" data-cd-label="' + label + '"><div class="progress-bar"><div class="progress-fill ' + color + '" style="width:' + pct + '%"></div></div></div></div>';
 }
 
 // Отсчёт — только за последние 24 часа, раньше — день недели и дата: «Ср (08.10)»
@@ -1237,19 +1231,19 @@ function taskDeadlineText(deadline){
  const label=diff===0?'Сегодня ('+wd+'.)':diff===1?'Завтра ('+wd+'.)':diff===2?'Послезавтра ('+wd+'.)':['в воскресенье','в понедельник','во вторник','в среду','в четверг','в пятницу','в субботу'][d.getDay()];
  return label+' в '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
 }
-function timerHTML(startAt,deadline,label){const pct=progressPct(startAt,deadline),color=progressColor(pct);return '<div class="scheme-countdown"><div class="progress-wrap" data-cd-start="'+startAt+'" data-cd-end="'+deadline+'" data-cd-label="'+label+'"><div class="progress-bar"><div class="progress-fill '+color+'" style="width:'+pct+'%"></div></div></div></div>'}
-function taskMetaText(sub){return String(sub||'').replace(/<span class="deadline-highlight">[\s\S]*?<\/b><\/span>/g,'').replace(/\s*[·•]\s*\d+\s*₽/g,'').replace(/^\s*[·•]\s*|\s*[·•]\s*$/g,'').trim()}
+function taskMetaText(sub){return String(sub||'').replace(/<span class="deadline-highlight">[\s\S]*?<\/b><\/span>/g,'').replace(/\s*\(осталось\s*<span data-left="[^"]*">[^<]*<\/span>\)/g,'').replace(/\s*[·•]\s*\d+\s*₽/g,'').replace(/^\s*[·•]\s*|\s*[·•]\s*$/g,'').trim()}
 function taskRow(t,{icon,num,sub='',right='',bar='',extra='',color=''}){
  const n=num||'',amount=Number(t.fine||0).toLocaleString('ru-RU')+' ₽';
  const action=String(right||'').replace(/\d[\d\s.,]*\s*₽/g,'').trim(),meta=taskMetaText(sub);
  const overdue=new Date(t.deadline)<new Date()&&!['done','failed','burned'].includes(t.status),scheme=document.documentElement.dataset.scheme||'bracket';
+ const progress=bar||(!['done','failed','burned'].includes(t.status)?timerHTML(t.confirmedAt||t.createdAt,t.deadline,'до'):'');
  return '<div class="tcard"><div class="task-scheme scheme-'+scheme+'" '+(color?'style="--scheme-rail:'+color+'"':'')+'>'+
  '<div class="scheme-assignment"><span>Задание '+(n||'—')+'</span></div>'+
  '<div class="scheme-flow">'+
  '<div class="scheme-branch"><div class="scheme-task-name" role="button" tabindex="0" onclick="openTaskCard(\''+t.id+'\')">'+t.name+'</div></div>'+
  '<div class="scheme-branch"><div><span class="scheme-label">Должно быть выполнено до</span><div class="scheme-date'+(overdue?' late':'')+'">'+taskDeadlineText(t.deadline)+'</div></div></div>'+
  '<div class="scheme-branch"><div><span class="scheme-label">Штраф</span><div class="scheme-penalty">'+amount+'</div></div><div class="scheme-action">'+action+'</div></div>'+
- '</div>'+bar+(meta?'<div class="scheme-meta">'+meta+'</div>':'')+'</div>'+(extra?'<div class="task-row-extra">'+extra+'</div>':'')+'</div>';
+ '</div>'+progress+(meta?'<div class="scheme-meta">'+meta+'</div>':'')+'</div>'+(extra?'<div class="task-row-extra">'+extra+'</div>':'')+'</div>';
 }
 function rowsBox(rows) { return rows.join(''); }
 
