@@ -508,9 +508,10 @@ body.sidebar-open{overflow:hidden}
 :root[data-ui="dashboard"] .bottom-nav .nav-btn.active{background:rgba(169,79,37,.09);border-radius:10px}
 @media(max-width:360px){:root[data-ui="dashboard"] .nav-btn{gap:4px;font-size:10px}:root[data-ui="dashboard"] .nav-icon{width:16px;height:16px}}
 
-.t .s .dl-lbl{display:block;margin:1px 0 2px;color:var(--muted);font-size:11.5px;font-weight:500;letter-spacing:.01em;line-height:1.25}
-.t .s .dl-lbl + b{display:inline-block;color:var(--text);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.35}
-.t .s .dl-lbl + b.late{color:var(--red)}
+.t .s .deadline-highlight{display:flex;flex-direction:column;gap:3px;width:max-content;max-width:100%;margin:4px 0;padding:8px 11px;border-left:4px solid var(--accent);border-radius:8px;background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.t .s .deadline-highlight .dl-lbl{display:block;color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.01em;line-height:1.25}
+.t .s .deadline-highlight .deadline-date{display:block;color:var(--text);font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.35}
+.t .s .deadline-highlight .deadline-date.late{color:var(--red)}
 </style>
 </head>
 <body>
@@ -1285,7 +1286,7 @@ function dlText(t, live = true) {
   const over = new Date(t.deadline) < new Date();
   const left = live && !['done','failed','burned'].includes(t.status)
     ? ` (осталось <span data-left="${t.deadline}">${timeLeft(t.deadline) || 'время вышло'}</span>)` : '';
-  return `<span class="dl-lbl">Должно быть выполнено до</span> <b${over && live ? ' class="late"' : ''}>${deadlineStr(t.deadline)}</b>${left}`;
+  return `<span class="deadline-highlight"><span class="dl-lbl">Должно быть выполнено до</span><b class="deadline-date${over && live ? ' late' : ''}">${deadlineStr(t.deadline)}</b></span>${left}`;
 }
 
 // Подпись строки: время ответа и дедлайн
