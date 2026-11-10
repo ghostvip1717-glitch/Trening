@@ -211,23 +211,61 @@ body.sidebar-open{overflow:hidden}
 .flist .timer-title { display: none; }
 .folder-act { display: flex; justify-content: flex-end; padding: 0 6px; }
 .inbox-bulk { background: none; border: none; color: var(--accent); font: 500 14px var(--body); cursor: pointer; padding: 0; }
-/* Строка задачи как в списках Telegram: круглая иконка, название, серая подпись */
-.trow { display: grid; grid-template-columns: 44px 1fr auto; gap: 0 12px; align-items: center; padding: 10px 14px 10px 12px; position: relative; }
-.trow + .trow::before, .trow-extra + .trow::before, .flist-add + .trow::before { content: ""; position: absolute; top: 0; left: 68px; right: 0; border-top: 1px solid var(--border); }
-.av.num { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; font-weight: 500; color: #fff; background: var(--c); }
-.t { min-width: 0; display: grid; gap: 2px; }
-.t .n { font-size: 16px; font-weight: 500; color: var(--accent); overflow-wrap: anywhere; }
-.t .s { font-size: 13.5px; color: var(--hint); font-variant-numeric: tabular-nums; }
-.t .s b { color: #c9d4df; font-weight: 500; }
-.t .s b.late { color: var(--red); }
-.dl-lbl { color: var(--c, var(--accent)); font-weight: 500; }
-.t .s [data-left] { white-space: nowrap; }
-.t .s b[data-left] { white-space: nowrap; }
-.r { display: flex; align-items: center; gap: 8px; color: var(--hint); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ok-btn { width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(94,181,247,0.14); color: var(--accent); font-size: 16px; font-weight: 700; display: grid; place-items: center; cursor: pointer; }
-.trow-extra { margin: 0 12px 12px 68px; display: grid; gap: 8px; }
-.trow-extra .btn { width: 100%; }
+/* Вертикальная схема карточки задачи */
+.tcard{--scheme-rail:var(--accent);background:var(--surface);border:1px solid var(--border);border-radius:15px;overflow:hidden;box-shadow:0 2px 7px rgba(73,48,31,.08)}
+.task-scheme{position:relative;padding:13px 14px 12px 18px;display:grid;gap:10px}
+.scheme-assignment{display:flex;justify-content:flex-end;margin-bottom:-2px}
+.scheme-assignment span{font-size:11px;line-height:1;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 8px}
+.scheme-flow{position:relative;display:grid;gap:9px}
+.scheme-flow:before{content:"";position:absolute;left:7px;top:3px;bottom:3px;width:3px;border-radius:2px;background:var(--scheme-rail)}
+.scheme-branch{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;min-height:27px;padding-left:24px}
+.scheme-branch:before{content:"";position:absolute;left:7px;top:50%;transform:translateY(-50%);height:3px;width:16px;background:var(--scheme-rail);border-radius:2px;z-index:1}
+.scheme-task-name{font-size:16px;line-height:1.3;font-weight:700;color:var(--text);overflow-wrap:anywhere;cursor:pointer}
+.scheme-label{display:block;margin-bottom:3px;font-size:10px;line-height:1.1;font-weight:700;letter-spacing:.055em;text-transform:uppercase;color:var(--muted)}
+.scheme-date{font-size:15px;line-height:1.3;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.scheme-date.late{color:var(--red)}
+.scheme-penalty{font-size:19px;line-height:1.2;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+.scheme-action{display:flex;align-items:center;gap:7px;justify-self:end}
+.scheme-action .badge{white-space:nowrap}
+.scheme-meta{margin:0 0 0 24px;font-size:12px;line-height:1.35;color:var(--muted)}
+.scheme-meta:empty{display:none}
+.scheme-countdown{display:contents}
+.scheme-countdown .progress-wrap{grid-column:1/-1;margin:1px 0 0 24px;padding:0;display:grid;gap:4px}
+.scheme-countdown .progress-bar{height:4px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.scheme-countdown .progress-fill{height:100%;border-radius:3px;background:#8f9a83;transition:width .5s}
+.scheme-countdown .progress-fill.late{background:var(--red)}
+.scheme-countdown .progress-time{font-size:11px;color:var(--muted)}
+.task-row-extra{margin:0 12px 12px 18px;display:grid;gap:8px}
+.task-row-extra .btn{width:100%}
+.ok-btn{min-height:32px;padding:0 12px;border-radius:9px;border:0;background:var(--btn);color:#fff;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.scheme-steps .scheme-flow{gap:8px}
+.scheme-steps .scheme-branch:nth-child(2){margin-left:6px}
+.scheme-steps .scheme-branch:nth-child(3){margin-left:12px}
+.scheme-steps .scheme-branch:nth-child(4){margin-left:18px}
+.scheme-frames .scheme-branch{padding:7px 8px;border:1px solid var(--border);border-radius:9px;background:color-mix(in srgb,var(--surface2) 45%,var(--surface))}
+.scheme-table .scheme-flow{gap:0}
+.scheme-table .scheme-branch{padding:8px 4px;border-bottom:1px solid var(--border)}
+.scheme-table .scheme-branch:last-child{border-bottom:0}
+.scheme-table .scheme-branch{grid-template-columns:minmax(0,1fr) auto}
+.scheme-table .scheme-branch>div:not(.scheme-action){grid-column:1;display:grid;grid-template-columns:98px minmax(0,1fr);align-items:center;gap:8px}
+.scheme-table .scheme-branch .scheme-label{grid-column:1;grid-row:1;margin:0;font-size:9px}
+.scheme-table .scheme-branch .scheme-task-name{grid-row:1;grid-column:1/-1}.scheme-table .scheme-branch .scheme-date,.scheme-table .scheme-branch .scheme-penalty{grid-row:1;grid-column:2}
+.scheme-double .scheme-flow:before{left:5px;width:2px;box-shadow:5px 0 0 var(--scheme-rail)}
+.scheme-double .scheme-branch{padding-left:5px}
+.scheme-double .scheme-branch:before{width:15px}
+.scheme-list{display:grid;gap:9px}
+.interface-option{display:grid;grid-template-columns:48px 1fr 22px;align-items:center;gap:10px;width:100%;min-height:64px;padding:9px;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);text-align:left;cursor:pointer}
+.interface-option.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+.interface-preview{position:relative;width:44px;height:38px;overflow:hidden;border:1px solid var(--border);border-radius:9px;background:var(--surface2)}
+.interface-preview:before{content:"";position:absolute;left:7px;top:5px;bottom:5px;width:2px;background:var(--accent)}
+.interface-preview i{position:absolute;left:8px;top:8px;width:24px;height:3px;border-radius:2px;background:var(--accent)}
+.interface-preview i:nth-child(2){top:17px;width:29px}
+.interface-preview i:nth-child(3){top:26px;width:20px}
+.interface-preview.preview-steps i:nth-child(2){left:12px}
+.interface-preview.preview-steps i:nth-child(3){left:16px}
+.interface-preview.preview-frames i{height:5px;background:transparent;border:1px solid var(--accent)}
+.interface-preview.preview-table i{height:1px;width:30px}
+.interface-preview.preview-double:before{box-shadow:4px 0 0 var(--accent)}
 .rv-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .rv-toggle { justify-self: start; background: none; border: 0; padding: 0; color: var(--accent); font: 400 14px var(--body); cursor: pointer; }
 .rv-photo { width: 100%; max-height: 420px; object-fit: contain; border-radius: 12px; background: var(--surface2); display: block; cursor: zoom-in; }
@@ -439,7 +477,7 @@ body.sidebar-open{overflow:hidden}
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ORBIT FOCUS — the only interface composition */
-:root[data-ui="orbit"]{--bg:#f2efff;--surface:#fff;--surface2:#e8e2ff;--border:#d9d0f3;--edge:#d9d0f3;--accent:#6845c2;--btn:#6845c2;--green:#17845c;--yellow:#946400;--orange:#a75017;--red:#c53c55;--violet:#6845c2;--teal:#087f7b;--text:#241d39;--muted:#766e8e;--neutral:#554d6f;--hint:#554d6f}
+:root[data-ui="orbit"]{--bg:#f1e9df;--surface:#fffaf3;--surface2:#f5e8dc;--border:#c3a68e;--edge:#c3a68e;--accent:#ad654b;--btn:#764737;--green:#3f795c;--yellow:#946b29;--orange:#a8653d;--red:#af4e4b;--violet:#764737;--teal:#59796f;--text:#342a24;--muted:#74675c;--neutral:#695d53;--hint:#6f6358}
 .debt-number{font-size:34px;font-weight:800;letter-spacing:-.02em}
 .r{color:var(--accent);font-size:18px;font-weight:800;padding:5px 9px;border-radius:10px;background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
 .card-fine{color:var(--accent);font-size:18px;font-weight:800}
@@ -557,7 +595,7 @@ body.sidebar-open{overflow:hidden}
   <aside class="sidebar" id="sidebar" aria-label="Боковое меню">
     <div class="sidebar-head"><div><div class="sidebar-brand">ACCOUNTABILITY</div><div class="sidebar-role" id="sidebar-role">Навигация и оформление</div></div><button class="sidebar-close" type="button" aria-label="Закрыть меню" onclick="closeSidebar()">×</button></div>
     <div class="sidebar-section-title">Разделы</div><nav class="sidebar-nav" id="sidebar-nav"></nav>
-    <div class="sidebar-section-title">Вид интерфейса</div><div class="interface-list" id="interface-list"></div>
+    <div class="sidebar-section-title">Схема карточки</div><div class="scheme-list" id="scheme-list"></div>
   </aside>
   <div class="edge-shade bottom"></div>
   <button class="btn-fab" id="fab" onclick="openModal('m-task')" style="display:none">＋</button>
@@ -1115,15 +1153,21 @@ function launchApp() {
   }
 }
 
-const INTERFACES=[
-{id:'orbit',name:'Орбитальный фокус',desc:'Круговые маркеры, центральный баланс и мягкие карточки',preview:'orbit'}
+const SCHEMES=[
+{id:'bracket',name:'Скоба',desc:'Одна ровная направляющая и три короткие ветви',preview:'bracket'},
+{id:'steps',name:'Ступени',desc:'Три строки с аккуратным смещением',preview:'steps'},
+{id:'frames',name:'Рамки',desc:'Каждый пункт отделён собственной рамкой',preview:'frames'},
+{id:'table',name:'Табличная колонка',desc:'Подписи и значения выстроены столбцами',preview:'table'},
+{id:'double',name:'Двойная направляющая',desc:'Две ровные линии связывают блоки',preview:'double'}
 ];
-let currentTab='';function initAppearance(){setInterface('orbit',false);try{localStorage.setItem('acc-interface','orbit')}catch(e){}}
-function setInterface(id,persist=true){id='orbit';document.documentElement.dataset.ui=id;if(persist){try{localStorage.setItem('acc-interface',id)}catch(e){}}renderInterfaceOptions()}
-function renderInterfaceOptions(){const list=document.getElementById('interface-list');if(!list)return;const active=document.documentElement.dataset.ui||'telegram';list.innerHTML=INTERFACES.map(x=>`<button class="interface-option ${x.id===active?'selected':''}" type="button" aria-pressed="${x.id===active}" onclick="setInterface('${x.id}')"><span class="interface-preview preview-${x.preview}"><i></i><i></i><i></i></span><span><span class="interface-name">${x.name}</span><span class="interface-desc">${x.desc}</span></span><span class="interface-check">${x.id===active?'✓':''}</span></button>`).join('')}
+let currentTab='';
+function initAppearance(){setInterface('orbit',false);let saved='bracket';try{saved=localStorage.getItem('acc-scheme')||'bracket'}catch(e){}setScheme(saved,false)}
+function setInterface(){document.documentElement.dataset.ui='orbit'}
+function setScheme(id,persist=true){if(!SCHEMES.some(x=>x.id===id))id='bracket';document.documentElement.dataset.scheme=id;if(persist){try{localStorage.setItem('acc-scheme',id)}catch(e){}}document.querySelectorAll('.task-scheme').forEach(el=>{el.className='task-scheme scheme-'+id});renderSchemeOptions()}
+function renderSchemeOptions(){const list=document.getElementById('scheme-list');if(!list)return;const active=document.documentElement.dataset.scheme||'bracket';list.innerHTML=SCHEMES.map(x=>`<button class="interface-option ${x.id===active?'selected':''}" type="button" aria-pressed="${x.id===active}" onclick="setScheme('${x.id}')"><span class="interface-preview preview-${x.preview}"><i></i><i></i><i></i></span><span><span class="interface-name">${x.name}</span><span class="interface-desc">${x.desc}</span></span><span class="interface-check">${x.id===active?'✓':''}</span></button>`).join('')}
 function renderSidebarNav(){const nav=document.getElementById('sidebar-nav');if(!nav||!ME)return;const items=S.role==='student'?[{id:'tasks',icon:'✓',label:'Задачи'},{id:'progress',icon:'▥',label:'Прогресс'},{id:'history',icon:'◷',label:'История'}]:[{id:'inbox',icon:'▣',label:'Входящие'},{id:'work',icon:'◷',label:'В работе'},{id:'progress',icon:'▥',label:'Прогресс'},{id:'all',icon:'◴',label:'История'}];nav.innerHTML=items.map(x=>`<button class="sidebar-link ${currentTab===x.id?'active':''}" type="button" onclick="sidebarGo('${x.id}')"><span class="sidebar-ico">${x.icon}</span><span>${x.label}</span></button>`).join('');document.getElementById('sidebar-role').textContent=S.role==='student'?'Режим ученика':'Режим тренера'}
 function sidebarGo(name){const navId=S.role==='student'?'nav-student':'nav-coach';const buttons=[...document.querySelectorAll('#'+navId+' .nav-btn')];const target=buttons.find(b=>b.getAttribute('onclick')?.includes("'"+name+"'"));switchTab(name,navId,target||null);renderSidebarNav();closeSidebar()}
-function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebar-backdrop').classList.add('open');document.body.classList.add('sidebar-open');document.querySelector('.sidebar-trigger')?.setAttribute('aria-expanded','true');renderInterfaceOptions();renderSidebarNav()}
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebar-backdrop').classList.add('open');document.body.classList.add('sidebar-open');document.querySelector('.sidebar-trigger')?.setAttribute('aria-expanded','true');renderSchemeOptions();renderSidebarNav()}
 function closeSidebar(){document.getElementById('sidebar')?.classList.remove('open');document.getElementById('sidebar-backdrop')?.classList.remove('open');document.body.classList.remove('sidebar-open');document.querySelector('.sidebar-trigger')?.setAttribute('aria-expanded','false')}
 
 function switchTab(name, navId, btn) {
@@ -1186,13 +1230,26 @@ function grpBox(color, title, count, inner, icon, act) {
     <div class="flist">${act ? `<div class="folder-act">${act}</div>` : ''}${inner}</div>
   </div>`;
 }
-// Строка задачи: иконка, «название», серая подпись, справа сумма/кнопка; extra — под строкой
-function taskRow(t, { icon, num, sub = '', right = '', bar = '', extra = '', color = '' }) {
-  return `<div class="tcard"><div class="trow">
-      <div class="av${num ? ' num' : ''}"${color ? ` style="background:${color}"` : ''}>${num || icon}</div>
-      <div class="t"><div class="n" role="button" tabindex="0" onclick="openTaskCard('${t.id}')">«${t.name}»</div>${bar}${sub ? `<div class="s">${sub}</div>` : ''}</div>
-      <div class="r">${right}</div>
-    </div>${extra ? `<div class="trow-extra">${extra}</div>` : ''}</div>`;
+// Вертикальная схема карточки: задача, срок и штраф.
+function taskDeadlineText(deadline){
+ const d=new Date(deadline),now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),day=new Date(d.getFullYear(),d.getMonth(),d.getDate()),diff=Math.round((day-today)/86400000);
+ const wd=d.toLocaleDateString('ru',{weekday:'short'}).replace(/\.$/,'').toLowerCase();
+ const label=diff===0?'Сегодня ('+wd+'.)':diff===1?'Завтра ('+wd+'.)':diff===2?'Послезавтра ('+wd+'.)':['в воскресенье','в понедельник','во вторник','в среду','в четверг','в пятницу','в субботу'][d.getDay()];
+ return label+' в '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+}
+function timerHTML(startAt,deadline,label){const pct=progressPct(startAt,deadline),color=progressColor(pct);return '<div class="scheme-countdown"><div class="progress-wrap" data-cd-start="'+startAt+'" data-cd-end="'+deadline+'" data-cd-label="'+label+'"><div class="progress-bar"><div class="progress-fill '+color+'" style="width:'+pct+'%"></div></div></div></div>'}
+function taskMetaText(sub){return String(sub||'').replace(/<span class="deadline-highlight">[\s\S]*?<\/b><\/span>/g,'').replace(/\s*[·•]\s*\d+\s*₽/g,'').replace(/^\s*[·•]\s*|\s*[·•]\s*$/g,'').trim()}
+function taskRow(t,{icon,num,sub='',right='',bar='',extra='',color=''}){
+ const n=num||'',amount=Number(t.fine||0).toLocaleString('ru-RU')+' ₽';
+ const action=String(right||'').replace(/\d[\d\s.,]*\s*₽/g,'').trim(),meta=taskMetaText(sub);
+ const overdue=new Date(t.deadline)<new Date()&&!['done','failed','burned'].includes(t.status),scheme=document.documentElement.dataset.scheme||'bracket';
+ return '<div class="tcard"><div class="task-scheme scheme-'+scheme+'" '+(color?'style="--scheme-rail:'+color+'"':'')+'>'+
+ '<div class="scheme-assignment"><span>Задание '+(n||'—')+'</span></div>'+
+ '<div class="scheme-flow">'+
+ '<div class="scheme-branch"><div class="scheme-task-name" role="button" tabindex="0" onclick="openTaskCard(\''+t.id+'\')">'+t.name+'</div></div>'+
+ '<div class="scheme-branch"><div><span class="scheme-label">Должно быть выполнено до</span><div class="scheme-date'+(overdue?' late':'')+'">'+taskDeadlineText(t.deadline)+'</div></div></div>'+
+ '<div class="scheme-branch"><div><span class="scheme-label">Штраф</span><div class="scheme-penalty">'+amount+'</div></div><div class="scheme-action">'+action+'</div></div>'+
+ '</div>'+bar+(meta?'<div class="scheme-meta">'+meta+'</div>':'')+'</div>'+(extra?'<div class="task-row-extra">'+extra+'</div>':'')+'</div>';
 }
 function rowsBox(rows) { return rows.join(''); }
 
@@ -1204,9 +1261,6 @@ function tickCountdowns() {
     const fill = el.querySelector('.progress-fill');
     fill.style.width = pct + '%';
     fill.className = 'progress-fill ' + progressColor(pct);
-    const txt = el.querySelector('.progress-time');
-    txt.innerHTML = countdownText(el.dataset.cdLabel, timeLeft(end), end);
-    txt.classList.toggle('warn', pct > 79);
   });
   document.querySelectorAll('[data-left]').forEach(el => {
     el.textContent = timeLeft(el.dataset.left) || 'время вышло';
@@ -1425,7 +1479,7 @@ function coachInboxItem(t, i) {
       extra: `<button class="btn btn-neutral" style="background:rgba(239,91,91,0.14);color:var(--red)" onclick="confirmOverdue('${t.id}')">Начислить штраф ${t.fine} ₽</button>` });
   }
   return taskRow(t, { num: i + 1, icon: '⏳', sub: `${dlText(t)} · ${t.fine} ₽`,
-    right: `<button class="ok-btn" aria-label="Подтвердить" onclick="confirmTask('${t.id}')">✓</button>` });
+    right: `<button class="ok-btn" aria-label="Принять" onclick="confirmTask('${t.id}')">Принять</button>` });
 }
 
 // Фото отчёта: в задаче лежит само фото (старый формат) или id отдельного хранилища
