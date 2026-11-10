@@ -476,24 +476,30 @@ body.sidebar-open{overflow:hidden}
 .toast { position: fixed; bottom: calc(var(--bot-gap) + 76px); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; z-index: 300; white-space: normal; text-align: center; width: max-content; max-width: calc(100% - 32px); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ORBIT FOCUS — the only interface composition */
-:root[data-ui="orbit"]{--bg:#f1e9df;--surface:#fffaf3;--surface2:#f5e8dc;--border:#c3a68e;--edge:#c3a68e;--accent:#ad654b;--btn:#764737;--green:#3f795c;--yellow:#946b29;--orange:#a8653d;--red:#af4e4b;--violet:#764737;--teal:#59796f;--text:#342a24;--muted:#74675c;--neutral:#695d53;--hint:#6f6358}
+/* WARCRAFT — тёплый пергамент, бронза и золото */
+:root[data-ui="orbit"]{--bg:#efe2cc;--surface:#fff8e9;--surface2:#ead7b7;--border:#ad895e;--edge:#ad895e;--accent:#98532f;--btn:#65412b;--green:#657a45;--yellow:#a87a27;--orange:#ad6331;--red:#a44a40;--violet:#76503b;--teal:#557363;--text:#32251c;--muted:#75624d;--neutral:#655445;--hint:#695944;--display:Georgia,"Times New Roman",serif;--body:"Trebuchet MS",Arial,sans-serif}
+:root[data-ui="orbit"] body{background:radial-gradient(ellipse at 50% 0%,#f7eddd 0%,var(--bg) 72%)}
 .debt-number{font-size:34px;font-weight:800;letter-spacing:-.02em}
 .r{color:var(--accent);font-size:18px;font-weight:800;padding:5px 9px;border-radius:10px;background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
 .card-fine{color:var(--accent);font-size:18px;font-weight:800}
 .pay-row .pa{color:var(--accent);font-size:18px;font-weight:800}
 .d-grid .d-cell:nth-child(3) b{color:var(--accent);font-size:19px;font-weight:800}
 :root[data-ui="orbit"] .app-top{padding:10px 14px 14px;text-align:center}
-:root[data-ui="orbit"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin:0 3px 10px;padding-left:54px}
-:root[data-ui="orbit"] .role-pill{display:inline-block;padding:5px 10px;border-radius:99px;background:var(--surface2);color:var(--accent);font-size:10px;font-weight:700}
-:root[data-ui="orbit"] .debt-display{display:grid;justify-items:center;gap:4px;padding:12px;margin-inline:11px;border:1px solid var(--border);border-radius:22px;background:radial-gradient(circle at center,var(--surface) 45%,var(--surface2) 100%);box-shadow:0 8px 22px rgba(72,50,130,.12)}
-:root[data-ui="orbit"] .debt-ava{width:42px;height:42px;margin:0 0 2px;border-radius:50%;font-size:19px}
+:root[data-ui="orbit"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin:0 3px 10px;padding-left:54px;font-family:var(--display);letter-spacing:.035em}
+:root[data-ui="orbit"] .role-pill{display:inline-block;padding:5px 10px;border-radius:99px;background:var(--surface2);color:var(--accent);font:700 10px var(--body);letter-spacing:.04em}
+:root[data-ui="orbit"] .debt-display{display:grid;justify-items:center;gap:4px;padding:12px;margin-inline:11px;border:1px solid var(--border);border-radius:22px;background:linear-gradient(145deg,#fffaf0 0%,#f4e4c9 100%);box-shadow:0 7px 20px rgba(87,55,29,.14),inset 0 1px 0 rgba(255,255,255,.8)}
+:root[data-ui="orbit"] .debt-ava{width:42px;height:42px;margin:0 0 2px;border:1px solid #c59a55;border-radius:50%;font-size:19px;background:radial-gradient(circle at 35% 28%,#e5bd67,#aa742e 68%,#765027);box-shadow:0 4px 12px rgba(112,72,26,.26),inset 0 1px 0 rgba(255,255,255,.45)}
 :root[data-ui="orbit"] .debt-number{font-size:32px;color:var(--accent)}
-:root[data-ui="orbit"] .ftab{border-radius:18px 18px 0 0;background:var(--surface2)}
-:root[data-ui="orbit"] .tcard,:root[data-ui="orbit"] .card{border:1px solid var(--border);border-radius:20px;background:var(--surface);box-shadow:0 7px 20px rgba(72,50,130,.08)}
-:root[data-ui="orbit"] .av{border-radius:50%;box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 20%,transparent)}
-:root[data-ui="orbit"] .bottom-nav{left:16px;right:16px;border-radius:24px;background:var(--surface);box-shadow:0 7px 24px rgba(72,50,130,.16)}
-:root[data-ui="orbit"] .nav-btn.active{background:var(--surface2);border-radius:18px;color:var(--accent)}
+:root[data-ui="orbit"] .ftab{border:1px solid var(--border);border-bottom:0;border-radius:16px 16px 0 0;background:linear-gradient(180deg,#f2dfbd,#e7cda5);color:var(--text)}
+:root[data-ui="orbit"] .ftab .tt{font-family:var(--display);font-weight:700}
+:root[data-ui="orbit"] .tcard,:root[data-ui="orbit"] .card{border:1px solid var(--border);border-radius:18px;background:linear-gradient(145deg,#fffaf0 0%,#fff7e9 100%);box-shadow:0 6px 16px rgba(70,45,27,.14),inset 0 1px 0 rgba(255,255,255,.85)}
+:root[data-ui="orbit"] .tcard{--scheme-rail:#98613b}
+:root[data-ui="orbit"] .scheme-assignment span{color:#725033;border-color:#b89468;background:#f2e2c8}
+:root[data-ui="orbit"] .scheme-date,:root[data-ui="orbit"] .scheme-penalty{color:var(--accent)}
+:root[data-ui="orbit"] .scheme-countdown .progress-fill{background:#71804c}
+:root[data-ui="orbit"] .ok-btn{border:1px solid #a77b43;background:linear-gradient(180deg,#7c5338,#603b28);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 2px 4px rgba(69,42,24,.18)}
+:root[data-ui="orbit"] .bottom-nav{left:16px;right:16px;border:1px solid #c6a574;border-radius:24px;background:#fff8e9;box-shadow:0 7px 24px rgba(81,55,31,.16)}
+:root[data-ui="orbit"] .nav-btn.active{background:#efe0c4;border-radius:18px;color:var(--accent)}
 :root[data-ui="orbit"] .r{border-radius:99px}
 .preview-orbit{--preview-bg:#f2efff;--preview-border:#d9d0f3;--preview-accent:#6845c2;--preview-line:#766e8e}
 .interface-preview.orbit{border-radius:50%}
@@ -1154,11 +1160,7 @@ function launchApp() {
 }
 
 const SCHEMES=[
-{id:'bracket',name:'Скоба',desc:'Одна ровная направляющая и три короткие ветви',preview:'bracket'},
-{id:'steps',name:'Ступени',desc:'Три строки с аккуратным смещением',preview:'steps'},
-{id:'frames',name:'Рамки',desc:'Каждый пункт отделён собственной рамкой',preview:'frames'},
-{id:'table',name:'Табличная колонка',desc:'Подписи и значения выстроены столбцами',preview:'table'},
-{id:'double',name:'Двойная направляющая',desc:'Две ровные линии связывают блоки',preview:'double'}
+{id:'bracket',name:'Скоба',desc:'Одна ровная направляющая и три чёткие ветви',preview:'bracket'}
 ];
 let currentTab='';
 function initAppearance(){setInterface('orbit',false);let saved='bracket';try{saved=localStorage.getItem('acc-scheme')||'bracket'}catch(e){}setScheme(saved,false)}
