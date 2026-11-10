@@ -438,132 +438,13 @@ body.sidebar-open{overflow:hidden}
 .toast { position: fixed; bottom: calc(var(--bot-gap) + 76px); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; z-index: 300; white-space: normal; text-align: center; width: max-content; max-width: calc(100% - 32px); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* COMPLETE INTERFACE PRESENTATIONS */
-:root[data-ui="compact"]{--bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--border:#252535;--edge:#252535;--accent:#3b82f6;--btn:#2563eb;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--violet:#a78bfa;--teal:#2dd4bf;--text:#eeeef5;--muted:#77778f;--neutral:#a0a0b5;--hint:#a0a0b5}
-:root[data-ui="cards"]{--bg:#f1f4fa;--surface:#fff;--surface2:#e8edf7;--border:#d5deeb;--edge:#d5deeb;--accent:#4f5fd0;--btn:#4f5fd0;--green:#168454;--yellow:#956400;--orange:#a75017;--red:#c43f49;--violet:#7250ba;--teal:#087f7b;--text:#1b2536;--muted:#6d7a90;--neutral:#53627a;--hint:#53627a}
-:root[data-ui="timeline"]{--bg:#10251f;--surface:#18352b;--surface2:#214437;--border:#2b5547;--edge:#2b5547;--accent:#78e0b0;--btn:#228b63;--green:#78e0a1;--yellow:#f0cc68;--orange:#f5a35c;--red:#ff7777;--violet:#c1a6ff;--teal:#60ded2;--text:#f2fff8;--muted:#86a99a;--neutral:#a8c5b8;--hint:#a8c5b8}
-:root[data-ui="dashboard"]{--bg:#f8f3eb;--surface:#fffdf8;--surface2:#f1e8da;--border:#e4d7c3;--edge:#e4d7c3;--accent:#a94f25;--btn:#b65b2b;--green:#20714d;--yellow:#8c6000;--orange:#a75017;--red:#b93535;--violet:#704db1;--teal:#147a75;--text:#30231d;--muted:#827166;--neutral:#66564b;--hint:#66564b}
-/* Telegram — centered balance and floating tabs, retained as the default */
-:root[data-ui="telegram"]{--bg:#1b2431;--surface:#232e3c;--surface2:#2b3848;--border:#2c3a4a;--edge:#2c3a4a;--accent:#5eb5f7;--btn:#3e8fd8;--text:#fff;--muted:#6f8194;--neutral:#8b9bab;--hint:#8b9bab}
-:root[data-ui="compact"] .edge-shade{display:none}
-:root[data-ui="compact"] .tab-content{padding:14px 14px 82px}
-:root[data-ui="compact"] .app-top{padding:12px 18px 10px;text-align:left;border-bottom:1px solid var(--border);flex-shrink:0}
-:root[data-ui="compact"] .app-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-:root[data-ui="compact"] .app-wordmark{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.1em}
-:root[data-ui="compact"] .role-pill{display:inline-block;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--surface2);color:var(--accent)}
-:root[data-ui="compact"] .debt-display{display:flex;align-items:center;justify-items:initial;justify-content:space-between;gap:12px}
-:root[data-ui="compact"] .debt-ava{display:none}
-:root[data-ui="compact"] .debt-number{order:2;font-size:22px}
-:root[data-ui="compact"] .debt-sub{order:1;display:flex;flex-direction:column;align-items:flex-start;font-size:10px}
-:root[data-ui="compact"] .debt-edit{padding:5px 0;font-size:12px}
-:root[data-ui="compact"] .bottom-nav{left:0;right:0;bottom:0;border-radius:0;border-top:1px solid var(--border);box-shadow:none;background:var(--surface)}
-:root[data-ui="compact"] .nav-btn{gap:3px;padding:9px 0;font-size:10px}
-:root[data-ui="compact"] .card{border:1px solid var(--border);border-radius:11px;box-shadow:none}
-:root[data-ui="compact"] .trow{padding:8px 10px}
-:root[data-ui="cards"] .app-top{padding:12px 14px 14px;text-align:left}
-:root[data-ui="cards"] .app-top-row{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px}
-:root[data-ui="cards"] .app-wordmark{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent)}
-:root[data-ui="cards"] .role-pill{display:inline-block;padding:5px 10px;border-radius:999px;background:var(--surface2);color:var(--accent);font-size:10px;font-weight:700}
-:root[data-ui="cards"] .debt-display{grid-template-columns:54px 1fr;justify-items:start;align-items:center;column-gap:14px;padding:14px 16px;border:1px solid var(--border);border-radius:19px;background:var(--surface);box-shadow:0 8px 24px rgba(39,55,91,.08)}
-:root[data-ui="cards"] .debt-ava{grid-row:1 / span 2;width:50px;height:50px;border-radius:15px;font-size:24px;margin:0}
-:root[data-ui="cards"] .debt-number{font-size:25px}
-:root[data-ui="cards"] .debt-sub{font-size:12px}
-:root[data-ui="cards"] .card{border:1px solid var(--border);border-radius:18px;padding:16px;background:var(--surface);box-shadow:0 5px 18px rgba(45,62,95,.07)}
-:root[data-ui="cards"] .tcard{border:1px solid var(--border);border-radius:17px;background:var(--surface);box-shadow:0 4px 14px rgba(45,62,95,.08)}
-:root[data-ui="cards"] .av{border-radius:13px}
-:root[data-ui="cards"] .ftab{border-radius:14px;background:var(--surface2)}
-:root[data-ui="cards"] .bottom-nav{left:12px;right:12px;bottom:calc(var(--bot-gap) - 8px);border-radius:18px;box-shadow:0 -2px 18px rgba(20,30,50,.15)}
-:root[data-ui="timeline"] .app-top{padding:8px 14px 12px;text-align:left;border-bottom:1px solid var(--border)}
-:root[data-ui="timeline"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-:root[data-ui="timeline"] .app-wordmark{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--accent)}
-:root[data-ui="timeline"] .role-pill{display:inline-block;padding:4px 10px;border-radius:20px;background:var(--surface2);color:var(--accent);font-size:10px;font-weight:700}
-:root[data-ui="timeline"] .debt-display{display:flex;justify-items:initial;justify-content:flex-start;align-items:center;gap:10px}
-:root[data-ui="timeline"] .debt-ava{width:34px;height:34px;font-size:17px;margin:0;box-shadow:none}
-:root[data-ui="timeline"] .debt-number{font-size:21px}
-:root[data-ui="timeline"] .debt-sub{margin-left:auto;font-size:12px}
-:root[data-ui="timeline"] .tab-content{padding:calc(var(--top-gap) + 8px) 14px calc(var(--bot-gap) + 78px)}
-:root[data-ui="timeline"] .flist{position:relative;margin-left:5px;padding:4px 0 4px 18px;border:0;border-left:2px solid var(--accent);gap:10px}
-:root[data-ui="timeline"] .trow{position:relative;padding:10px 10px}
-:root[data-ui="timeline"] .trow::before{display:none}
-:root[data-ui="timeline"] .trow::after{content:"";position:absolute;left:-26px;top:21px;width:12px;height:12px;border:3px solid var(--bg);border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-:root[data-ui="timeline"] .tcard{border:1px solid var(--border);border-radius:13px}
-:root[data-ui="timeline"] .ftab{background:var(--surface2)}
-:root[data-ui="timeline"] .bottom-nav{left:0;right:0;bottom:0;border-radius:0;border-top:1px solid var(--border);box-shadow:none}
-:root[data-ui="dashboard"] .tab-content{padding:calc(var(--top-gap) + 110px) 14px calc(var(--bot-gap) + 26px)}
-:root[data-ui="dashboard"] .bottom-nav{top:calc(var(--top-gap) + 52px);bottom:auto;left:12px;right:12px;border-radius:14px;box-shadow:0 3px 14px rgba(75,49,31,.12)}
-:root[data-ui="dashboard"] .nav-btn{flex-direction:row;gap:7px;padding:10px 7px;font-size:11px}
-:root[data-ui="dashboard"] .nav-icon{width:18px;height:18px}
-:root[data-ui="dashboard"] .app-top{padding:12px 4px 14px;text-align:left}
-:root[data-ui="dashboard"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-:root[data-ui="dashboard"] .app-wordmark{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--accent)}
-:root[data-ui="dashboard"] .role-pill{display:inline-block;padding:4px 10px;border-radius:20px;background:var(--surface2);color:var(--accent);font-size:10px;font-weight:700}
-:root[data-ui="dashboard"] .debt-display{display:grid;justify-items:start;gap:6px;padding:16px;border:1px solid var(--border);border-radius:18px;background:var(--surface)}
-:root[data-ui="dashboard"] .debt-ava{display:none}
-:root[data-ui="dashboard"] .debt-number{font-size:30px}
-:root[data-ui="dashboard"] .debt-sub{font-size:12px}
-:root[data-ui="dashboard"] .folder{margin-top:14px}
-:root[data-ui="dashboard"] .ftab{background:var(--surface2);border-radius:12px 12px 0 0}
-:root[data-ui="dashboard"] .tcard,:root[data-ui="dashboard"] .card{border:1px solid var(--border);border-radius:14px;box-shadow:0 3px 12px rgba(75,49,31,.06)}
-:root[data-ui="dashboard"] .progress-bar{height:7px;border-radius:8px}
-:root[data-ui="dashboard"] .bottom-nav .nav-btn.active{background:rgba(169,79,37,.09);border-radius:10px}
-@media(max-width:360px){:root[data-ui="dashboard"] .nav-btn{gap:4px;font-size:10px}:root[data-ui="dashboard"] .nav-icon{width:16px;height:16px}}
-
-.t .s .deadline-highlight{display:flex;flex-direction:column;gap:3px;width:max-content;max-width:100%;margin:4px 0;padding:8px 11px;border-left:4px solid var(--accent);border-radius:8px;background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
-.t .s .deadline-highlight .dl-lbl{display:block;color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.01em;line-height:1.25}
-.t .s .deadline-highlight .deadline-date{display:block;color:var(--text);font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.35}
-.t .s .deadline-highlight .deadline-date.late{color:var(--red)}
-
-/* FIVE MORE FULL-SCREEN COMPOSITIONS */
-:root[data-ui="ledger"]{--bg:#17202b;--surface:#202c3a;--surface2:#2a394a;--border:#3a4a5e;--edge:#3a4a5e;--accent:#62c3d2;--btn:#278ca1;--green:#60cc91;--yellow:#f0c45d;--orange:#ed9658;--red:#f16a73;--violet:#aa9cff;--teal:#53d1c2;--text:#f4f8fc;--muted:#8b9bad;--neutral:#bac8d8;--hint:#bac8d8}
-:root[data-ui="signal"]{--bg:#201a13;--surface:#2d2419;--surface2:#3a2e1e;--border:#65502b;--edge:#65502b;--accent:#ffc34d;--btn:#d88719;--green:#82d66c;--yellow:#ffcf5e;--orange:#ff9a42;--red:#ff6868;--violet:#d0a0ff;--teal:#58d3bd;--text:#fff8e9;--muted:#b4a17f;--neutral:#d6c5a5;--hint:#d6c5a5}
+/* ORBIT FOCUS — the only interface composition */
 :root[data-ui="orbit"]{--bg:#f2efff;--surface:#fff;--surface2:#e8e2ff;--border:#d9d0f3;--edge:#d9d0f3;--accent:#6845c2;--btn:#6845c2;--green:#17845c;--yellow:#946400;--orange:#a75017;--red:#c53c55;--violet:#6845c2;--teal:#087f7b;--text:#241d39;--muted:#766e8e;--neutral:#554d6f;--hint:#554d6f}
-:root[data-ui="journal"]{--bg:#f7f2e8;--surface:#fffdf7;--surface2:#eee6d7;--border:#ded3bf;--edge:#ded3bf;--accent:#315d52;--btn:#315d52;--green:#27734e;--yellow:#8e6500;--orange:#a75017;--red:#b83e35;--violet:#7154a6;--teal:#247d7a;--text:#292821;--muted:#797363;--neutral:#5e5a4d;--hint:#5e5a4d}
-:root[data-ui="terminal"]{--bg:#071c19;--surface:#0c2923;--surface2:#13372e;--border:#205445;--edge:#205445;--accent:#42e2ae;--btn:#08785b;--green:#5be69a;--yellow:#e7d95a;--orange:#f5a35c;--red:#ff6969;--violet:#b7a3ff;--teal:#42e2ae;--text:#e5fff5;--muted:#72a997;--neutral:#a8d1c2;--hint:#a8d1c2}
-
-/* Money is always the first visual cue in every composition */
 .debt-number{font-size:34px;font-weight:800;letter-spacing:-.02em}
 .r{color:var(--accent);font-size:18px;font-weight:800;padding:5px 9px;border-radius:10px;background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
 .card-fine{color:var(--accent);font-size:18px;font-weight:800}
 .pay-row .pa{color:var(--accent);font-size:18px;font-weight:800}
 .d-grid .d-cell:nth-child(3) b{color:var(--accent);font-size:19px;font-weight:800}
-.debt-display{position:relative}
-:root[data-ui="compact"] .r,:root[data-ui="ledger"] .r,:root[data-ui="terminal"] .r{font-variant-numeric:tabular-nums}
-
-/* Ledger: totals and tabs at the top, information in dense rows */
-:root[data-ui="ledger"] .tab-content{padding:calc(var(--top-gap) + 110px) 12px calc(var(--bot-gap) + 20px)}
-:root[data-ui="ledger"] .app-top{padding:12px 14px 12px;text-align:left;border-bottom:1px solid var(--border)}
-:root[data-ui="ledger"] .app-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-:root[data-ui="ledger"] .role-pill{display:inline-block;padding:4px 9px;border-radius:7px;background:var(--surface2);color:var(--accent);font-size:10px;font-weight:700}
-:root[data-ui="ledger"] .debt-display{display:flex;align-items:center;justify-content:space-between;gap:8px}
-:root[data-ui="ledger"] .debt-ava{display:none}
-:root[data-ui="ledger"] .debt-number{order:2;padding:5px 12px;border-radius:9px;background:var(--surface2);color:var(--accent)}
-:root[data-ui="ledger"] .debt-sub{order:1;margin-right:auto;font-size:12px}
-:root[data-ui="ledger"] .bottom-nav{top:calc(var(--top-gap) + 52px);bottom:auto;left:12px;right:12px;border-radius:10px;background:var(--surface);box-shadow:none;border:1px solid var(--border)}
-:root[data-ui="ledger"] .nav-btn{flex-direction:row;gap:6px;padding:9px 5px;border-right:1px solid var(--border);font-size:11px}
-:root[data-ui="ledger"] .nav-btn:last-child{border:0}
-:root[data-ui="ledger"] .nav-btn.active{background:var(--surface2);color:var(--accent)}
-:root[data-ui="ledger"] .tcard,:root[data-ui="ledger"] .card{border:1px solid var(--border);border-radius:9px;box-shadow:none}
-:root[data-ui="ledger"] .trow{grid-template-columns:34px minmax(0,1fr) auto;gap:0 8px;padding:8px}
-:root[data-ui="ledger"] .av{width:34px;height:34px;border-radius:8px;font-size:15px}
-:root[data-ui="ledger"] .t .n{font-size:14px}
-
-/* Signal board: distinct status panels, bold values, full-width dock */
-:root[data-ui="signal"] .app-top{padding:12px 14px 14px;text-align:left}
-:root[data-ui="signal"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-:root[data-ui="signal"] .role-pill{display:inline-block;padding:5px 10px;border-radius:8px;background:var(--surface2);color:var(--accent);font-size:10px;font-weight:800}
-:root[data-ui="signal"] .debt-display{display:grid;grid-template-columns:50px 1fr;justify-items:start;align-items:center;gap:4px 12px;padding:13px;border:1px solid var(--accent);border-radius:12px;background:var(--surface)}
-:root[data-ui="signal"] .debt-ava{grid-row:1 / span 2;width:46px;height:46px;margin:0;border-radius:12px;font-size:22px}
-:root[data-ui="signal"] .debt-number{color:var(--yellow)}
-:root[data-ui="signal"] .debt-sub{font-size:12px}
-:root[data-ui="signal"] .folder{margin:14px 0}
-:root[data-ui="signal"] .ftab{border-radius:9px 9px 0 0;background:var(--surface2)}
-:root[data-ui="signal"] .flist{border-top-width:3px}
-:root[data-ui="signal"] .tcard,:root[data-ui="signal"] .card{border:1px solid var(--border);border-radius:10px;box-shadow:0 3px 0 rgba(0,0,0,.18)}
-:root[data-ui="signal"] .r{border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 18%,var(--surface));color:var(--yellow)}
-:root[data-ui="signal"] .bottom-nav{left:0;right:0;bottom:0;border-radius:0;border-top:2px solid var(--accent);box-shadow:none;background:var(--surface)}
-:root[data-ui="signal"] .nav-btn.active{background:var(--surface2);color:var(--yellow)}
-
-/* Orbit: round markers, centered balance, soft elevated cards */
 :root[data-ui="orbit"] .app-top{padding:10px 14px 14px;text-align:center}
 :root[data-ui="orbit"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin:0 3px 10px}
 :root[data-ui="orbit"] .role-pill{display:inline-block;padding:5px 10px;border-radius:99px;background:var(--surface2);color:var(--accent);font-size:10px;font-weight:700}
@@ -576,72 +457,12 @@ body.sidebar-open{overflow:hidden}
 :root[data-ui="orbit"] .bottom-nav{left:16px;right:16px;border-radius:24px;background:var(--surface);box-shadow:0 7px 24px rgba(72,50,130,.16)}
 :root[data-ui="orbit"] .nav-btn.active{background:var(--surface2);border-radius:18px;color:var(--accent)}
 :root[data-ui="orbit"] .r{border-radius:99px}
-
-/* Journal: editorial typography, ruled rows and underline tabs */
-:root[data-ui="journal"] .tab-content{padding:calc(var(--top-gap) + 110px) 18px calc(var(--bot-gap) + 74px)}
-:root[data-ui="journal"] .app-top{padding:13px 4px 12px;text-align:left;border-bottom:2px solid var(--text)}
-:root[data-ui="journal"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-:root[data-ui="journal"] .app-wordmark{font-family:Georgia,serif;font-size:13px;letter-spacing:.12em;color:var(--text)}
-:root[data-ui="journal"] .role-pill{display:inline-block;padding:4px 9px;border:1px solid var(--border);color:var(--accent);font-size:10px;font-weight:700}
-:root[data-ui="journal"] .debt-display{display:flex;justify-items:initial;align-items:baseline;gap:10px}
-:root[data-ui="journal"] .debt-ava{display:none}
-:root[data-ui="journal"] .debt-sub{order:2;font-size:12px}
-:root[data-ui="journal"] .debt-number{order:1;font-family:Georgia,serif;font-size:32px}
-:root[data-ui="journal"] .bottom-nav{top:calc(var(--top-gap) + 52px);bottom:auto;left:8px;right:8px;background:transparent;border-bottom:1px solid var(--border);box-shadow:none}
-:root[data-ui="journal"] .nav-btn{flex-direction:row;justify-content:center;gap:5px;padding:9px 3px;border-bottom:2px solid transparent;font-size:11px}
-:root[data-ui="journal"] .nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-:root[data-ui="journal"] .nav-icon{width:17px;height:17px}
-:root[data-ui="journal"] .folder{margin-top:16px;filter:none}
-:root[data-ui="journal"] .ftab{display:flex;width:100%;max-width:none;padding:7px 0;background:transparent;border-bottom:1px solid var(--border);border-radius:0}
-:root[data-ui="journal"] .ftab::after{display:none}
-:root[data-ui="journal"] .stk{width:25px;height:25px;border-radius:6px}
-:root[data-ui="journal"] .flist{border:0;padding-top:0;gap:0}
-:root[data-ui="journal"] .tcard{border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;box-shadow:none}
-:root[data-ui="journal"] .trow{padding:12px 0;grid-template-columns:34px minmax(0,1fr) auto;gap:0 10px}
-:root[data-ui="journal"] .av{width:30px;height:30px;border-radius:6px;font-size:13px}
-:root[data-ui="journal"] .bottom-nav .nav-btn.active{background:transparent}
-
-/* Terminal: monospace control panel and squared modules */
-:root[data-ui="terminal"]{--display:ui-monospace,SFMono-Regular,Menlo,monospace}
-:root[data-ui="terminal"] .tab-content{padding:calc(var(--top-gap) + 8px) 10px calc(var(--bot-gap) + 82px)}
-:root[data-ui="terminal"] .app-top{padding:9px 12px 12px;text-align:left;border-bottom:1px dashed var(--border)}
-:root[data-ui="terminal"] .app-top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-:root[data-ui="terminal"] .app-wordmark{font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;color:var(--accent)}
-:root[data-ui="terminal"] .role-pill{display:inline-block;padding:3px 8px;border:1px solid var(--accent);color:var(--accent);font:700 10px ui-monospace,monospace}
-:root[data-ui="terminal"] .debt-display{display:flex;justify-items:initial;align-items:center;gap:10px}
-:root[data-ui="terminal"] .debt-ava{width:34px;height:34px;margin:0;border-radius:4px;font-size:16px}
-:root[data-ui="terminal"] .debt-number{font-size:26px;color:var(--accent)}
-:root[data-ui="terminal"] .debt-sub{margin-left:auto;font-size:11px}
-:root[data-ui="terminal"] .bottom-nav{left:8px;right:8px;bottom:calc(var(--bot-gap) - 7px);border:1px solid var(--accent);border-radius:7px;background:var(--surface);box-shadow:none}
-:root[data-ui="terminal"] .nav-btn{gap:3px;padding:8px 2px;font:500 10px ui-monospace,monospace}
-:root[data-ui="terminal"] .nav-btn.active{background:var(--surface2);color:var(--accent)}
-:root[data-ui="terminal"] .folder{filter:none}
-:root[data-ui="terminal"] .ftab{border-radius:4px 4px 0 0;background:var(--surface2)}
-:root[data-ui="terminal"] .tcard,:root[data-ui="terminal"] .card{border:1px solid var(--border);border-radius:5px;box-shadow:none}
-:root[data-ui="terminal"] .t .n,:root[data-ui="terminal"] .r,:root[data-ui="terminal"] .card-fine{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-:root[data-ui="terminal"] .r{border:1px solid var(--accent);border-radius:4px;background:transparent}
-:root[data-ui="terminal"] .progress-bar{height:6px;border-radius:2px}
-:root[data-ui="terminal"] .seg{border:1px solid var(--border);border-radius:5px}
-:root[data-ui="terminal"] .seg button{border-radius:3px}
-.preview-ledger{--preview-bg:#17202b;--preview-border:#3a4a5e;--preview-accent:#62c3d2;--preview-line:#bac8d8}
-.preview-signal{--preview-bg:#201a13;--preview-border:#65502b;--preview-accent:#ffc34d;--preview-line:#d6c5a5}
 .preview-orbit{--preview-bg:#f2efff;--preview-border:#d9d0f3;--preview-accent:#6845c2;--preview-line:#766e8e}
-.preview-journal{--preview-bg:#f7f2e8;--preview-border:#ded3bf;--preview-accent:#315d52;--preview-line:#797363}
-.preview-terminal{--preview-bg:#071c19;--preview-border:#205445;--preview-accent:#42e2ae;--preview-line:#72a997}
-.interface-preview.signal i{border-left:3px solid var(--preview-accent)}
 .interface-preview.orbit{border-radius:50%}
 .interface-preview.orbit:before{left:13px;top:3px;width:16px;height:16px;border-radius:50%}
 .interface-preview.orbit i{left:7px;top:23px;width:30px}
 .interface-preview.orbit i:nth-child(2){top:30px;width:23px}
 .interface-preview.orbit i:nth-child(3){display:none}
-.interface-preview.journal{border-radius:3px}
-.interface-preview.journal:before{height:3px;border-radius:0}
-.interface-preview.journal i{height:2px;border-radius:0}
-.interface-preview.terminal{border-radius:3px;border-style:dashed}
-.interface-preview.terminal:before{height:3px;border-radius:0}
-.interface-preview.terminal i{height:3px;border-radius:0}
-@media(max-width:380px){:root[data-ui="ledger"] .nav-btn{font-size:9px;gap:3px}:root[data-ui="ledger"] .nav-icon{width:17px;height:17px}:root[data-ui="journal"] .nav-btn{font-size:10px;gap:3px}}
-
 </style>
 </head>
 <body>
@@ -1295,20 +1116,10 @@ function launchApp() {
 }
 
 const INTERFACES=[
-{id:'telegram',name:'Telegram — сводка по центру',desc:'Баланс по центру, плавающая панель вкладок',preview:'telegram'},
-{id:'compact',name:'Компактный список',desc:'Баланс в одну строку, нижняя панель на всю ширину',preview:'compact'},
-{id:'cards',name:'Карточный контроль',desc:'Крупные карточки и отдельные блоки задач',preview:'cards'},
-{id:'timeline',name:'Лента сроков',desc:'Задачи идут по вертикальной временной линии',preview:'timeline'},
-{id:'dashboard',name:'Рабочий стол',desc:'Навигация сверху, сводка и отдельные блоки',preview:'dashboard'},
-{id:'ledger',name:'Смета сверху',desc:'Вкладки сверху, суммы справа, плотный рабочий список',preview:'ledger'},
-{id:'signal',name:'Сигнальная доска',desc:'Цветные статусы и крупные суммы в каждой задаче',preview:'signal'},
-{id:'orbit',name:'Орбитальный фокус',desc:'Круговые маркеры, центральный баланс и мягкие карточки',preview:'orbit'},
-{id:'journal',name:'Рабочий журнал',desc:'Редакционная подача, строки-разделители и вкладки-подчёркивания',preview:'journal'},
-{id:'terminal',name:'Цифровой пульт',desc:'Техническая сетка, моноширинные суммы и панели-разделы',preview:'terminal'}
+{id:'orbit',name:'Орбитальный фокус',desc:'Круговые маркеры, центральный баланс и мягкие карточки',preview:'orbit'}
 ];
-let currentTab='';
-function initAppearance(){let id='telegram';try{id=localStorage.getItem('acc-interface')||id}catch(e){}setInterface(INTERFACES.some(x=>x.id===id)?id:'telegram',false)}
-function setInterface(id,persist=true){if(!INTERFACES.some(x=>x.id===id))id='telegram';document.documentElement.dataset.ui=id;if(persist){try{localStorage.setItem('acc-interface',id)}catch(e){}}renderInterfaceOptions()}
+let currentTab='';function initAppearance(){setInterface('orbit',false);try{localStorage.setItem('acc-interface','orbit')}catch(e){}}
+function setInterface(id,persist=true){id='orbit';document.documentElement.dataset.ui=id;if(persist){try{localStorage.setItem('acc-interface',id)}catch(e){}}renderInterfaceOptions()}
 function renderInterfaceOptions(){const list=document.getElementById('interface-list');if(!list)return;const active=document.documentElement.dataset.ui||'telegram';list.innerHTML=INTERFACES.map(x=>`<button class="interface-option ${x.id===active?'selected':''}" type="button" aria-pressed="${x.id===active}" onclick="setInterface('${x.id}')"><span class="interface-preview preview-${x.preview}"><i></i><i></i><i></i></span><span><span class="interface-name">${x.name}</span><span class="interface-desc">${x.desc}</span></span><span class="interface-check">${x.id===active?'✓':''}</span></button>`).join('')}
 function renderSidebarNav(){const nav=document.getElementById('sidebar-nav');if(!nav||!ME)return;const items=S.role==='student'?[{id:'tasks',icon:'✓',label:'Задачи'},{id:'progress',icon:'▥',label:'Прогресс'},{id:'history',icon:'◷',label:'История'}]:[{id:'inbox',icon:'▣',label:'Входящие'},{id:'work',icon:'◷',label:'В работе'},{id:'progress',icon:'▥',label:'Прогресс'},{id:'all',icon:'◴',label:'История'}];nav.innerHTML=items.map(x=>`<button class="sidebar-link ${currentTab===x.id?'active':''}" type="button" onclick="sidebarGo('${x.id}')"><span class="sidebar-ico">${x.icon}</span><span>${x.label}</span></button>`).join('');document.getElementById('sidebar-role').textContent=S.role==='student'?'Режим ученика':'Режим тренера'}
 function sidebarGo(name){const navId=S.role==='student'?'nav-student':'nav-coach';const buttons=[...document.querySelectorAll('#'+navId+' .nav-btn')];const target=buttons.find(b=>b.getAttribute('onclick')?.includes("'"+name+"'"));switchTab(name,navId,target||null);renderSidebarNav();closeSidebar()}
