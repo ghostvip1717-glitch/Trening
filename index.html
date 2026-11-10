@@ -508,6 +508,9 @@ body.sidebar-open{overflow:hidden}
 :root[data-ui="dashboard"] .bottom-nav .nav-btn.active{background:rgba(169,79,37,.09);border-radius:10px}
 @media(max-width:360px){:root[data-ui="dashboard"] .nav-btn{gap:4px;font-size:10px}:root[data-ui="dashboard"] .nav-icon{width:16px;height:16px}}
 
+.t .s .dl-lbl{display:block;margin:1px 0 2px;color:var(--muted);font-size:11.5px;font-weight:500;letter-spacing:.01em;line-height:1.25}
+.t .s .dl-lbl + b{display:inline-block;color:var(--text);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.35}
+.t .s .dl-lbl + b.late{color:var(--red)}
 </style>
 </head>
 <body>
@@ -614,7 +617,7 @@ body.sidebar-open{overflow:hidden}
     <div class="modal-handle"></div>
     <div class="modal-title">Новая задача</div>
     <div class="field"><label>Задача</label><input type="text" id="t-name" placeholder="Например: выпить витамины"></div>
-    <div class="field"><label>Дедлайн</label><input type="datetime-local" id="t-dl"></div>
+    <div class="field"><label>Должно быть выполнено до</label><input type="datetime-local" id="t-dl"></div>
     <div class="field"><label>Штраф (₽)</label><input type="number" id="t-fine" placeholder="500" inputmode="numeric"></div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal('m-task')">Отмена</button>
@@ -1274,7 +1277,7 @@ function reportBtn(t, cls, onclick) {
 }
 
 function deadlineStr(dl) {
-  return new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  return new Date(dl).toLocaleString('ru', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 
 // «Дедлайн» цветом группы + (сколько осталось, обновляется каждую секунду)
@@ -1282,7 +1285,7 @@ function dlText(t, live = true) {
   const over = new Date(t.deadline) < new Date();
   const left = live && !['done','failed','burned'].includes(t.status)
     ? ` (осталось <span data-left="${t.deadline}">${timeLeft(t.deadline) || 'время вышло'}</span>)` : '';
-  return `<span class="dl-lbl">Дедлайн</span> <b${over && live ? ' class="late"' : ''}>${deadlineStr(t.deadline)}</b>${left}`;
+  return `<span class="dl-lbl">Должно быть выполнено до</span> <b${over && live ? ' class="late"' : ''}>${deadlineStr(t.deadline)}</b>${left}`;
 }
 
 // Подпись строки: время ответа и дедлайн
@@ -1599,7 +1602,7 @@ function taskCardHTML(t) {
     if (!isCoach) acts = `<div class="d-acts">${reportBtn(t, 'btn-primary', `act(openReport,'${t.id}')`)}<button class="btn btn-neutral" onclick="act(pokeCoach)">🔔 Написать тренеру</button></div>`;
   } else if (t.status === 'pending') {
     h += `<div class="d-note">${isCoach ? 'Ученик создал задачу' : 'Задача создана'} ${dur(now - new Date(t.createdAt).getTime())} назад. После подтверждения запустится отсчёт до дедлайна.</div>
-      <div class="d-grid">${tile('Дедлайн', deadlineStr(t.deadline))}${tile('Будет на выполнение', dl > now ? dur(dl - now) : 'время вышло')}${tile('Штраф', t.fine + ' ₽')}</div>`;
+      <div class="d-grid">${tile('Срок выполнения', deadlineStr(t.deadline))}${tile('Будет на выполнение', dl > now ? dur(dl - now) : 'время вышло')}${tile('Штраф', t.fine + ' ₽')}</div>`;
     if (isCoach) acts = `<div class="d-acts"><button class="btn btn-primary" onclick="act(confirmTask,'${t.id}')">✓ Подтвердить задачу</button></div>`;
   } else if (t.status === 'reported') {
     const margin = dl - new Date(t.reportedAt).getTime();
